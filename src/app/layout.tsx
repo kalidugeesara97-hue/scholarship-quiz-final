@@ -29,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="si" className={sinhalaFont.variable}>
-      <body className="font-sans min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-blue-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+      <body className="font-sans min-h-screen bg-gradient-to-b from-sky-50 via-amber-50/30 to-indigo-50/50 text-slate-800 antialiased">
         {children}
         <AiAssistant />
       </body>

@@ -4,27 +4,28 @@
 
 /* Custom selection color */
 ::selection {
-  background-color: #818cf8;
+  background-color: #6366f1;
   color: white;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #94a3b8;
-  border-radius: 3px;
+  background: #cbd5e1;
+  border-radius: 9999px;
 }
 
 /* Smooth transitions */
 * {
-  transition-property: background-color, border-color, color, opacity, transform;
-  transition-duration: 200ms;
-  transition-timing-function: ease-in-out;
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Confetti animation */
@@ -53,46 +54,49 @@
   top: -20px;
   width: 10px;
   height: 10px;
-  border-radius: 2px;
+  border-radius: 3px;
   animation: confetti-fall 3s ease-in-out forwards, confetti-sway 2s ease-in-out infinite;
   z-index: 50;
   pointer-events: none;
 }
 
-/* Pulse animation for buttons */
-@keyframes gentle-pulse {
+/* 3D Button Shadows (Duolingo style) */
+.btn-3d-green {
+  box-shadow: 0 5px 0 #059669;
+}
+.btn-3d-green:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #059669;
+}
+
+.btn-3d-blue {
+  box-shadow: 0 5px 0 #2563eb;
+}
+.btn-3d-blue:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #2563eb;
+}
+
+.btn-3d-amber {
+  box-shadow: 0 5px 0 #d97706;
+}
+.btn-3d-amber:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #d97706;
+}
+
+/* Float animation */
+@keyframes float-slow {
   0%, 100% {
-    transform: scale(1);
+    transform: translateY(0px);
   }
   50% {
-    transform: scale(1.02);
+    transform: translateY(-8px);
   }
 }
 
-.animate-gentle-pulse {
-  animation: gentle-pulse 2s ease-in-out infinite;
-}
-
-/* Bounce in animation */
-@keyframes bounce-in {
-  0% {
-    transform: scale(0.3);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(0.95);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.animate-bounce-in {
-  animation: bounce-in 0.6s ease-out;
+.animate-float {
+  animation: float-slow 3s ease-in-out infinite;
 }
 
 /* Slide up animation */
@@ -108,10 +112,10 @@
 }
 
 .animate-slide-up {
-  animation: slide-up 0.4s ease-out;
+  animation: slide-up 0.3s ease-out;
 }
 
 /* Font family override */
 body {
-  font-family: var(--font-sinhala), system-ui, sans-serif;
+  font-family: var(--font-sinhala), system-ui, -apple-system, sans-serif;
 }
