@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  HeroBannerIllustration,
+  NatureIllustration,
+  SinhalaIllustration,
+  MathIllustration,
+  IQIllustration
+} from './components/Illustrations'
 
 type QuizInfo = {
   subject: string
@@ -18,11 +25,39 @@ const AVATARS = [
   { emoji: '🦉', label: 'බස්සා' },
 ]
 
-const SUBJECT_LIST = [
-  { name: 'පරිසරය', emoji: '🌿', desc: 'ගස්වැල්, සතුන් හා පරිසරය', color: 'from-emerald-500 to-teal-600', border: 'border-emerald-200', bg: 'bg-emerald-50/80', text: 'text-emerald-800' },
-  { name: 'සිංහල', emoji: '📖', desc: 'ව්‍යාකරණ, තේරුම් ගැනීම', color: 'from-amber-500 to-orange-600', border: 'border-amber-200', bg: 'bg-amber-50/80', text: 'text-amber-800' },
-  { name: 'ගණිතය', emoji: '➕', desc: 'ගැටලු, රටා හා මුදල්', color: 'from-blue-500 to-indigo-600', border: 'border-blue-200', bg: 'bg-blue-50/80', text: 'text-blue-800' },
-  { name: 'සාමාන්‍ය බුද්ධිය', emoji: '🧠', desc: 'IQ, රූප රටා හා තර්කනය', color: 'from-purple-500 to-pink-600', border: 'border-purple-200', bg: 'bg-purple-50/80', text: 'text-purple-800' },
+const SUBJECTS = [
+  {
+    name: 'පරිසරය',
+    desc: 'ගස්වැල්, සතුන්, ජාතික සම්පත්',
+    illustration: <NatureIllustration />,
+    border: 'border-emerald-300',
+    bg: 'bg-emerald-50/90',
+    text: 'text-emerald-900',
+  },
+  {
+    name: 'සිංහල',
+    desc: 'ව්‍යාකරණ, තේරුම් ගැනීම',
+    illustration: <SinhalaIllustration />,
+    border: 'border-amber-300',
+    bg: 'bg-amber-50/90',
+    text: 'text-amber-900',
+  },
+  {
+    name: 'ගණිතය',
+    desc: 'ගැටලු, රටා, මුදල් හා කාලය',
+    illustration: <MathIllustration />,
+    border: 'border-blue-300',
+    bg: 'bg-blue-50/90',
+    text: 'text-blue-900',
+  },
+  {
+    name: 'සාමාන්‍ය බුද්ධිය',
+    desc: 'IQ, රූප රටා හා තර්කනය',
+    illustration: <IQIllustration />,
+    border: 'border-purple-300',
+    bg: 'bg-purple-50/90',
+    text: 'text-purple-900',
+  },
 ]
 
 export default function Home() {
@@ -42,7 +77,7 @@ export default function Home() {
         } else {
           setQuizInfo({ subject: 'පරිසරය', topic: 'ශ්‍රී ලංකාවේ ජාතික සංකේත හා භූගෝලය', subjectEmoji: '🌿' })
         }
-      } catch (e) {
+      } catch {
         setQuizInfo({ subject: 'පරිසරය', topic: 'ශ්‍රී ලංකාවේ ජාතික සංකේත හා භූගෝලය', subjectEmoji: '🌿' })
       } finally {
         setLoading(false)
@@ -73,60 +108,41 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen py-8 px-4 flex flex-col items-center justify-center">
-      <div className="w-full max-w-lg space-y-6">
+    <main className="min-h-screen py-6 px-4 flex flex-col items-center justify-center">
+      <div className="w-full max-w-lg space-y-5">
         
-        {/* Top Header & Mascot */}
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 text-amber-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-md mb-3 border border-amber-300">
-            <span>✨</span> 2026 ශිෂ්‍යත්ව ජයමඟ <span>✨</span>
-          </div>
+        {/* Canva-Style Illustrated Hero Banner */}
+        <HeroBannerIllustration />
 
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <span className="text-5xl animate-float">🦉</span>
-            <h1 className="text-3xl sm:text-4xl font-black text-indigo-950 tracking-tight leading-tight drop-shadow-sm">
-              සුමිත් සර්ගේ ශිෂ්‍යත්ව පෙරහුරුව
-            </h1>
-          </div>
-
-          <p className="text-sm sm:text-base font-bold text-indigo-700 max-w-md mx-auto">
-            දිනපතා විනාඩි 5න් ඔබේ දරුවාගේ ශිෂ්‍යත්ව දැනුම ඉහළ නංවන ස්මාර්ට් අභ්‍යාස මාලාව
-          </p>
-        </div>
-
-        {/* Main Interactive Student Card */}
-        <div className="w-full rounded-3xl bg-white p-6 sm:p-8 shadow-2xl shadow-indigo-100/70 border-4 border-indigo-100/80 relative overflow-hidden">
+        {/* Main Interactive Action Card */}
+        <div className="w-full rounded-3xl bg-white p-6 sm:p-7 shadow-2xl shadow-indigo-100/70 border-4 border-indigo-100 relative overflow-hidden">
           
-          {/* Today's Topic Banner */}
+          {/* Today's Active Quiz Pill */}
           {quizInfo && (
-            <div className="mb-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 sm:p-5 text-white shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mt-2 -mr-2 opacity-15 text-8xl font-black select-none pointer-events-none">
-                {quizInfo.subjectEmoji || '📝'}
+            <div className="mb-5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 text-white shadow-lg relative overflow-hidden">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="px-3 py-0.5 rounded-full bg-white/20 text-xs font-black uppercase tracking-wider backdrop-blur-sm text-amber-200">
+                  අද දවසේ ප්‍රශ්නාවලිය
+                </span>
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-400 text-amber-950">
+                  ප්‍රශ්න 5 යි • විනාඩි 5
+                </span>
               </div>
-              <div className="relative z-10">
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="px-3 py-0.5 rounded-full bg-white/20 text-xs font-black uppercase tracking-wider backdrop-blur-sm text-amber-200">
-                    අද දවසේ ප්‍රශ්නාවලිය
-                  </span>
-                  <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-400 text-amber-950 shadow-sm">
-                    ප්‍රශ්න 5 යි
-                  </span>
-                </div>
-                <h2 className="text-2xl font-black flex items-center gap-2 mt-1">
-                  <span>{quizInfo.subjectEmoji || '🌿'}</span>
-                  <span>{quizInfo.subject}</span>
-                </h2>
-                <p className="text-sm font-bold text-blue-100 mt-1">
-                  📌 මාතෘකාව: <span className="font-extrabold text-amber-300">{quizInfo.topic}</span>
-                </p>
-              </div>
+              <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2 mt-1">
+                <span>{quizInfo.subjectEmoji || '🌿'}</span>
+                <span>{quizInfo.subject}</span>
+              </h2>
+              <p className="text-xs sm:text-sm font-bold text-blue-100 mt-0.5">
+                📌 මාතෘකාව: <span className="font-black text-amber-300">{quizInfo.topic}</span>
+              </p>
             </div>
           )}
 
-          {/* Choose Avatar */}
-          <div className="mb-5">
-            <label className="block text-xs font-black text-indigo-900 uppercase tracking-wider mb-2">
-              1. ඔබේ Avatar රූපය තෝරන්න:
+          {/* 1. Choose Avatar */}
+          <div className="mb-4">
+            <label className="block text-xs font-black text-indigo-950 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white text-[11px]">1</span>
+              <span>ඔබේ Avatar රූපය තෝරන්න:</span>
             </label>
             <div className="grid grid-cols-6 gap-2">
               {AVATARS.map((av) => (
@@ -134,7 +150,7 @@ export default function Home() {
                   key={av.emoji}
                   type="button"
                   onClick={() => setSelectedAvatar(av.emoji)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-2xl border-2 text-2xl transition-all ${
+                  className={`flex flex-col items-center justify-center p-2 rounded-2xl border-2 text-2xl transition-all cursor-pointer ${
                     selectedAvatar === av.emoji
                       ? 'border-indigo-600 bg-indigo-50 shadow-md scale-110 ring-2 ring-indigo-300'
                       : 'border-slate-200 bg-slate-50 hover:bg-white hover:border-indigo-200'
@@ -146,13 +162,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Student Name Input */}
-          <div className="mb-6 text-left">
-            <label className="mb-2 block text-sm font-black text-indigo-950 flex items-center gap-2">
-              <span>✍️</span> 2. ඔබේ නම ඇතුළත් කරන්න:
+          {/* 2. Student Name Input */}
+          <div className="mb-5 text-left">
+            <label className="mb-2 block text-xs font-black text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white text-[11px]">2</span>
+              <span>ඔබේ නම ඇතුළත් කරන්න:</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl select-none">
                 {selectedAvatar}
               </span>
               <input 
@@ -168,10 +185,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Start Quiz 3D Button */}
+          {/* 3. Start Quiz 3D Button */}
           <button 
             onClick={handleStart}
-            className="w-full min-h-[62px] rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl px-6 py-4 shadow-[0_6px_0_#059669] active:translate-y-1 active:shadow-[0_2px_0_#059669] transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+            className="w-full min-h-[64px] rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl px-6 py-4 shadow-[0_6px_0_#059669] active:translate-y-1 active:shadow-[0_2px_0_#059669] transition-all flex items-center justify-center gap-2.5 cursor-pointer border-2 border-emerald-400/60"
           >
             <span>ප්‍රශ්නාවලිය පටන් ගමු!</span>
             <span className="text-3xl">🚀</span>
@@ -179,14 +196,14 @@ export default function Home() {
 
           {/* WhatsApp Share Button */}
           {quizInfo && (
-            <div className="mt-6 border-t border-slate-100 pt-5">
+            <div className="mt-5 border-t border-slate-100 pt-4">
               <a
                 href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
                   `📚 *සුමිත් සර්ගේ ශිෂ්‍යත්ව ප්‍රශ්නාවලිය*\n\n📖 *විෂය:* ${quizInfo.subject}\n📋 *මාතෘකාව:* ${quizInfo.topic}\n❓ *ප්‍රශ්න ගණන:* 5\n\n👉 *ප්‍රශ්නාවලියට සහභාගී වීමට:*\n${typeof window !== 'undefined' ? window.location.origin : ''}\n\n🏆 ලකුණු 5/5 ගත හැකිද බලන්න!\n— *සුමිත් සර්ගේ පන්තිය*`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full min-h-[48px] rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-md active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 w-full min-h-[46px] rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md active:scale-95 transition-all"
               >
                 <span className="text-lg">📲</span>
                 <span>WhatsApp Group එකට Share කරන්න</span>
@@ -196,53 +213,35 @@ export default function Home() {
 
         </div>
 
-        {/* 4 Subjects Cards */}
+        {/* 4 Illustrated Subjects Cards (Canva-styled visual cards) */}
         <div className="space-y-3">
           <div className="flex items-center justify-between px-2">
-            <h3 className="font-black text-indigo-950 text-sm uppercase tracking-wider flex items-center gap-1.5">
-              <span>📚</span> ආවරණය වන විෂය නිර්දේශය
+            <h3 className="font-black text-indigo-950 text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1.5">
+              <span>🎨</span> විෂය නිර්දේශ පෙරහුරුව
             </h3>
             <span className="text-xs font-bold text-indigo-600">5 ශ්‍රේණිය</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {SUBJECT_LIST.map((s, idx) => (
+            {SUBJECTS.map((s, idx) => (
               <div
                 key={idx}
-                className={`p-4 rounded-3xl border-2 ${s.border} ${s.bg} shadow-sm hover:shadow-md transition-all flex flex-col justify-between`}
+                className={`p-4 rounded-3xl border-2 ${s.border} ${s.bg} shadow-md hover:shadow-lg transition-all flex flex-col items-center text-center justify-between gap-2`}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-3xl p-2 rounded-2xl bg-white shadow-xs">{s.emoji}</span>
-                  <div>
-                    <h4 className={`font-black text-base ${s.text}`}>{s.name}</h4>
-                  </div>
+                <div className="p-2 rounded-2xl bg-white shadow-sm">
+                  {s.illustration}
                 </div>
-                <p className="text-xs font-bold text-slate-500 leading-snug">{s.desc}</p>
+                <div>
+                  <h4 className={`font-black text-base ${s.text}`}>{s.name}</h4>
+                  <p className="text-[11px] font-bold text-slate-500 mt-0.5 leading-snug">{s.desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Feature Badges */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/80 backdrop-blur p-4 rounded-2xl border border-indigo-100 shadow-sm flex items-center gap-3">
-            <span className="text-2xl p-2 bg-amber-100 rounded-xl">⚡</span>
-            <div>
-              <p className="font-black text-indigo-950 text-xs">ක්ෂණික ලකුණු</p>
-              <p className="text-[11px] font-bold text-slate-500">පැහැදිලි කිරීම් සමඟ</p>
-            </div>
-          </div>
-          <div className="bg-white/80 backdrop-blur p-4 rounded-2xl border border-indigo-100 shadow-sm flex items-center gap-3">
-            <span className="text-2xl p-2 bg-blue-100 rounded-xl">📊</span>
-            <div>
-              <p className="font-black text-indigo-950 text-xs">ගුරු වාර්තා</p>
-              <p className="text-[11px] font-bold text-slate-500">Google Sheet සටහන්</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Daily Motivation Box */}
-        <div className="rounded-3xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 p-4 sm:p-5 text-center shadow-sm">
+        {/* Daily Motivation Card */}
+        <div className="rounded-3xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300/80 p-4 sm:p-5 text-center shadow-sm">
           <p className="text-xs font-black text-amber-800 uppercase tracking-wider mb-1 flex items-center justify-center gap-1">
             <span>💡</span> අද දවසේ ශිෂ්‍යත්ව උපදෙස
           </p>

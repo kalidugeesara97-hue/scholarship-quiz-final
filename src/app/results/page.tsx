@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { TrophyIllustration } from '../components/Illustrations'
 
 type QuestionResult = {
   questionId: number
@@ -115,10 +116,12 @@ export default function ResultsPage() {
       )}
 
       {/* Main Results Hero Card */}
-      <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-2xl shadow-indigo-100/70 text-center mb-6 border-4 border-indigo-100/80 relative overflow-hidden">
+      <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-2xl shadow-indigo-100/70 text-center mb-6 border-4 border-indigo-100/80 relative overflow-hidden flex flex-col items-center">
         
-        {/* Big Trophy / Emoji */}
-        <div className="text-7xl sm:text-8xl mb-2 animate-bounce">{emoji}</div>
+        {/* Big 3D Trophy */}
+        <div className="mb-2">
+          <TrophyIllustration />
+        </div>
 
         {/* Student Avatar & Name Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-950 font-black text-sm mb-3 border border-indigo-200">
