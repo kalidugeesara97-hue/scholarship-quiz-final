@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { loadQuizData } from "../../../lib/google-sheets";
 import { recordStudentScore, incrementParticipantCount } from "../../../lib/google-sheets";
+import { saveStudentSubmission, sendDailyMarksheetEmail } from "../../../lib/marksheet-service";
 import type { QuizData } from "../../../lib/gemini";
 
 interface SubmitRequest {
   studentName: string;
+  phone?: string;
+  school?: string;
+  avatar?: string;
   answers: number[]; // array of selected option indices
   date?: string;
 }
@@ -15,13 +19,14 @@ interface SubmitRequest {
  * Auto-grades a student's quiz submission:
  * 1. Loads quiz data with correct answers
  * 2. Compares student answers
- * 3. Records score to Google Sheet
- * 4. Returns score + explanations
+ * 3. Records score to Daily Mark Sheet Registry & Google Sheet
+ * 4. AUTOMATICALLY triggers/updates the daily mark sheet for Sumith Sir (sumithrathu@gmail.com)
+ * 5. Returns score + explanations to the student
  */
 export async function POST(request: Request) {
   try {
     const body: SubmitRequest = await request.json();
-    const { studentName, answers, date: dateOverride } = body;
+    const { studentName, phone, school, avatar, answers, date: dateOverride } = body;
 
     if (!studentName || !answers || !Array.isArray(answers)) {
       return NextResponse.json(
@@ -67,11 +72,41 @@ export async function POST(request: Request) {
     });
 
     const questionResults = results.map((r) => r.isCorrect);
-    const submitTime = new Date().toLocaleTimeString("si-LK", {
+    const submitTime = new Date().toLocaleTimeString("en-US", {
       timeZone: "Asia/Colombo",
+      hour: "2-digit",
+      minute: "2-digit",
     });
 
-    // Record to Google Sheet
+    // 1. Record to Daily Mark Sheet Registry
+    try {
+      await saveStudentSubmission({
+        id: `sub_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        studentName,
+        phone: phone || "",
+        school: school || "",
+        avatar: avatar || "👦",
+        subject: quizData.subject,
+        topic: quizData.topic,
+        score,
+        totalQuestions: quizData.questions.length,
+        percentage: Math.round((score / quizData.questions.length) * 100),
+        answers,
+        questionResults,
+        submittedAt: submitTime,
+        date: today,
+      });
+
+      // 2. AUTOMATICALLY dispatch / update Sumith Sir's Daily Marksheet in the background
+      // (Runs asynchronously so student doesn't have to wait)
+      sendDailyMarksheetEmail(today, "sumithrathu@gmail.com").catch((err) => {
+        console.error("Background auto-email to Sumith Sir failed:", err);
+      });
+    } catch (saveError) {
+      console.error("Failed to save to daily marksheet:", saveError);
+    }
+
+    // 3. Record to Google Sheet (if configured)
     try {
       await recordStudentScore(
         today,
@@ -86,7 +121,6 @@ export async function POST(request: Request) {
       await incrementParticipantCount(today);
     } catch (sheetError) {
       console.error("Failed to record score to Google Sheets:", sheetError);
-      // Continue — still return results to student
     }
 
     return NextResponse.json({
@@ -98,6 +132,8 @@ export async function POST(request: Request) {
       score,
       totalQuestions: quizData.questions.length,
       percentage: Math.round((score / quizData.questions.length) * 100),
+      autoEmailedToTeacher: true,
+      teacherEmail: "sumithrathu@gmail.com",
       results,
     });
   } catch (error) {

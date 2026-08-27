@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="si" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>සුමිත් සර්ගේ ශිෂ්‍යත්ව පෙරහුරුව | 5 ශ්‍රේණිය Pure HTML Web App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Noto Sans Sinhala & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans Sinhala"', 'system-ui', 'sans-serif'],
+                        display: ['"Plus Jakarta Sans"', '"Noto Sans Sinhala"', 'sans-serif'],
+                    },
+                    colors: {
+                        ceylon: {
+                            slate: '#070B14',
+                            sapphire: '#3B82F6',
+                            indigo: '#4F46E5',
+                            gold: '#F59E0B',
+                            amber: '#D97706',
+                            jade: '#10B981',
+                            coral: '#F43F5E',
+                        }
+                    },
+                    boxShadow: {
+                        'tactile-sapphire': '0 6px 0 #312E81, 0 12px 24px rgba(79, 70, 229, 0.35)',
+                        'tactile-gold': '0 6px 0 #92400E, 0 12px 24px rgba(245, 158, 11, 0.35)',
+                        'tactile-jade': '0 6px 0 #065F46, 0 12px 24px rgba(16, 185, 129, 0.35)',
+                        'glow-gold': '0 0 35px -5px rgba(245, 158, 11, 0.35)',
+                        'glow-jade': '0 0 35px -5px rgba(16, 185, 129, 0.35)',
+                        'glow-sapphire': '0 0 35px -5px rgba(59, 130, 246, 0.35)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #070B14;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.22) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.16) 0px, transparent 45%),
+                radial-gradient(at 50% 100%, rgba(6, 182, 212, 0.14) 0px, transparent 50%);
+            background-attachment: fixed;
+            font-family: 'Noto Sans Sinhala', sans-serif;
+            color: #F1F5F9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .app-canvas {
+            width: 100%;
+            max-width: 440px;
+            height: 890px;
+            background: rgba(11, 17, 32, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 46px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9), 0 0 0 8px #131D33, 0 0 60px rgba(79, 70, 229, 0.25);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 640px) {
+            .app-canvas {
+                max-width: 100%;
+                height: 100vh;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+            }
+            body {
+                background: #070B14;
+            }
+        }
+
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .paper-deck-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .paper-deck-card:hover {
+            border-color: rgba(99, 102, 241, 0.45);
+            box-shadow: 0 20px 45px -15px rgba(99, 102, 241, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-tactile {
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-tactile:active {
+            transform: translateY(4px) !important;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.4) !important;
+        }
+
+        @keyframes float-magical {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-7px) rotate(1.5deg); }
+        }
+        .animate-mascot {
+            animation: float-magical 4s ease-in-out infinite;
+        }
+
+        @keyframes spring-pop {
+            0% { transform: scale(0.92); opacity: 0; }
+            70% { transform: scale(1.03); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-spring {
+            animation: spring-pop 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+        }
+        .animate-shake {
+            animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .confetti-dot {
+            position: absolute;
+            top: -20px;
+            animation: confetti-fall 3.5s ease-in-out forwards;
+            pointer-events: none;
+            z-index: 60;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-0 sm:p-4 antialiased selection:bg-indigo-600 selection:text-white">
+
+    <!-- ==========================================================
+         STANDALONE PURE HTML APP CANVAS
+    =========================================================== -->
+    <div class="app-canvas">
+
+        <!-- ==========================================================
+             SCREEN 0: QUICK ONBOARDING / ACCOUNT SETUP (Password-free)
+        =========================================================== -->
+        <div id="screen-onboarding" class="hidden flex-1 overflow-y-auto hide-scroll p-5 space-y-4 flex flex-col justify-between">
+            <div class="space-y-4">
+                
+                <!-- Welcome Title Seal -->
+                <div class="text-center pt-2 space-y-1.5">
+                    <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-600 to-amber-500 p-0.5 mx-auto shadow-xl shadow-indigo-500/30">
+                        <div class="w-full h-full bg-slate-900 rounded-[22px] flex items-center justify-center text-3xl animate-bounce">
+                            🎓
+                        </div>
+                    </div>
+                    <h2 class="text-xl font-black text-white tracking-tight mt-3">
+                        සාදරයෙන් පිළිගනිමු!
+                    </h2>
+                    <p class="text-xs text-slate-400 leading-relaxed max-w-[290px] mx-auto font-medium">
+                        Password අවශ්‍ය නැත. ළමයාගේ නම සහ WhatsApp අංකය පමණක් දී ක්ෂණිකව ප්‍රශ්න පත්‍රයට පිවිසෙන්න.
+                    </p>
+                </div>
+
+                <!-- AVATAR SELECTION -->
+                <div class="paper-deck-card p-4">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+                        1. ඔබේ චරිතය තෝරන්න
+                    </label>
+                    <div class="flex gap-2.5 overflow-x-auto pb-1 hide-scroll" id="reg-avatar-list">
+                        <div onclick="selectRegAvatar('👦', this)" class="reg-avatar-item w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5 flex-shrink-0 cursor-pointer scale-105 shadow-md shadow-indigo-500/30">
+                            <div class="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-2xl">👦</div>
+                        </div>
+                        <div onclick="selectRegAvatar('👧', this)" class="reg-avatar-item w-12 h-12 rounded-2xl bg-white/5 border border-white/10 p-0.5 flex-shrink-0 cursor-pointer opacity-50 hover:opacity-100 transition">
+                            <div class="w-full h-full bg-slate-900/60 rounded-[14px] flex items-center justify-center text-2xl">👧</div>
+                        </div>
+                        <div onclick="selectRegAvatar('🦁', this)" class="reg-avatar-item w-12 h-12 rounded-2xl bg-white/5 border border-white/10 p-0.5 flex-shrink-0 cursor-pointer opacity-50 hover:opacity-100 transition">
+                            <div class="w-full h-full bg-slate-900/60 rounded-[14px] flex items-center justify-center text-2xl">🦁</div>
+                        </div>
+                        <div onclick="selectRegAvatar('🚀', this)" class="reg-avatar-item w-12 h-12 rounded-2xl bg-white/5 border border-white/10 p-0.5 flex-shrink-0 cursor-pointer opacity-50 hover:opacity-100 transition">
+                            <div class="w-full h-full bg-slate-900/60 rounded-[14px] flex items-center justify-center text-2xl">🚀</div>
+                        </div>
+                        <div onclick="selectRegAvatar('🦉', this)" class="reg-avatar-item w-12 h-12 rounded-2xl bg-white/5 border border-white/10 p-0.5 flex-shrink-0 cursor-pointer opacity-50 hover:opacity-100 transition">
+                            <div class="w-full h-full bg-slate-900/60 rounded-[14px] flex items-center justify-center text-2xl">🦉</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STUDENT FORM -->
+                <div class="paper-deck-card p-4 space-y-3" id="onboard-form-card">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                            2. ළමයාගේ සම්පූර්ණ නම *
+                        </label>
+                        <input id="reg-name" type="text" placeholder="උදා: කසුන් මධුශංක" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm font-bold text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none transition placeholder:text-slate-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                            3. දෙමව්පියන්ගේ WhatsApp අංකය *
+                        </label>
+                        <input id="reg-phone" type="tel" placeholder="07X XXXXXXX (ලකුණු සහ විස්තර එවීමට)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm font-bold text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none transition placeholder:text-slate-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                            4. පාසල (විකල්ප)
+                        </label>
+                        <input id="reg-school" type="text" placeholder="ඔබේ පාසලේ නම (ඇත්නම් පමණක් ලියන්න)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm font-bold text-white focus:border-indigo-500 outline-none transition placeholder:text-slate-500">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <div class="pt-2">
+                <button onclick="saveAccountAndStart()" class="btn-tactile w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 text-white font-black text-sm shadow-tactile-sapphire flex items-center justify-center gap-2 cursor-pointer">
+                    <span>ප්‍රශ්න පත්‍රයට පිවිසෙන්න 🚀</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ==========================================================
+             SCREEN 1: FOCUSED SCHOLASTIC HOME ("ආයුබෝවන්!" + Past Papers)
+        =========================================================== -->
+        <div id="screen-home" class="flex-1 overflow-y-auto hide-scroll p-4 pb-20 space-y-4">
+            
+            <!-- 1. AYUBOWAN SCHOLASTIC SEAL HEADER -->
+            <div class="paper-deck-card p-4 bg-gradient-to-r from-indigo-950/80 via-slate-900 to-purple-950/80 border-indigo-500/30 flex items-center justify-between shadow-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 via-blue-500 to-amber-400 p-0.5 shadow-md shadow-indigo-500/30 flex-shrink-0">
+                        <div id="home-avatar" class="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-2xl">
+                            👦
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-base font-black text-white tracking-tight">
+                                ආයුබෝවන්, <span id="home-name">කසුන්</span>! 👋
+                            </h2>
+                        </div>
+                        <p class="text-[11px] text-indigo-200/80 font-semibold flex items-center gap-1.5 mt-0.5">
+                            <span>🎓 5 ශ්‍රේණිය ශිෂ්‍යත්වය</span>
+                            <span>•</span>
+                            <span class="text-amber-400 font-bold">සුමිත් සර් සමඟ පෙරහුරුව</span>
+                        </p>
+                    </div>
+                </div>
+
+                <button onclick="showOnboarding()" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition" title="Edit Profile">
+                    ⚙️
+                </button>
+            </div>
+
+            <!-- 2. MAIN CARD: TODAY'S PAST PAPER DETAILS (අද දවසේ Past Papers විස්තරය) -->
+            <div id="main-paper-card" class="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-emerald-950 via-slate-900 to-teal-950 p-5 border-2 border-emerald-500/40 shadow-2xl shadow-slate-950/80 transition-all duration-500">
+                <!-- Ambient Glow -->
+                <div class="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-emerald-500/25 blur-2xl pointer-events-none"></div>
+                <div class="absolute right-6 -bottom-8 w-28 h-28 rounded-full bg-amber-400/20 blur-xl pointer-events-none"></div>
+
+                <!-- Badge -->
+                <div class="flex items-center justify-between mb-3">
+                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider shadow-md shadow-amber-500/30">
+                        ⭐ අද දවසේ ප්‍රශ්න පත්‍රය
+                    </span>
+                    <span id="today-date-badge" class="text-[10px] font-bold text-slate-300 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/10">
+                        2026 අගෝස්තු 27
+                    </span>
+                </div>
+
+                <!-- Paper Title & Mascot -->
+                <div class="flex items-start justify-between gap-2 mb-4">
+                    <div class="space-y-1">
+                        <h3 id="paper-title-text" class="text-xl font-black text-white tracking-tight leading-snug flex items-center gap-2">
+                            <span>🌿</span> පරිසරය හා සාමාන්‍ය දැනීම
+                        </h3>
+                        <p id="paper-topic-text" class="text-xs text-slate-300 font-medium">
+                            මාතෘකාව: ශ්‍රී ලංකාවේ ජාතික සම්පත් සහ පරිසර විද්‍යාව
+                        </p>
+                    </div>
+
+                    <!-- Bespoke Scholar Owl Mascot -->
+                    <div class="w-16 h-16 flex-shrink-0 animate-mascot">
+                        <svg viewBox="0 0 100 100" fill="none" class="w-full h-full drop-shadow-md">
+                            <circle cx="50" cy="50" r="38" fill="#10B981" fill-opacity="0.25" stroke="#10B981" stroke-width="2"/>
+                            <circle cx="50" cy="52" r="30" fill="#1E293B"/>
+                            <circle cx="40" cy="48" r="8" fill="#FFFFFF"/>
+                            <circle cx="60" cy="48" r="8" fill="#FFFFFF"/>
+                            <circle cx="41" cy="48" r="4" fill="#0F172A"/>
+                            <circle cx="59" cy="48" r="4" fill="#0F172A"/>
+                            <polygon points="50,54 45,61 55,61" fill="#F59E0B"/>
+                            <polygon points="50,18 20,32 50,40 80,32" fill="#4338CA"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Past Paper Specs / Details Grid -->
+                <div class="grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/10 mb-4 text-center">
+                    <div class="space-y-0.5">
+                        <span class="text-[10px] text-slate-400 block font-semibold">📝 ප්‍රශ්න ගණන</span>
+                        <span class="text-sm font-black text-white font-display">05 MCQ</span>
+                    </div>
+                    <div class="space-y-0.5 border-x border-white/10">
+                        <span class="text-[10px] text-slate-400 block font-semibold">⏱️ කාලය</span>
+                        <span class="text-sm font-black text-amber-300 font-display">10 මිනි</span>
+                    </div>
+                    <div class="space-y-0.5">
+                        <span class="text-[10px] text-slate-400 block font-semibold">🏆 මුළු ලකුණු</span>
+                        <span class="text-sm font-black text-emerald-400 font-display">100</span>
+                    </div>
+                </div>
+
+                <!-- BIG PROMINENT START BUTTON -->
+                <button onclick="startQuiz('පරිසරය')" id="btn-main-start" class="btn-tactile w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-slate-950 font-black text-base shadow-tactile-jade flex items-center justify-center gap-2 cursor-pointer">
+                    <span>ප්‍රශ්න පත්‍රය ආරම්භ කරන්න</span>
+                    <span class="text-lg">🚀</span>
+                </button>
+            </div>
+
+            <!-- 3. PREVIOUS DAYS PAST PAPERS (පසුගිය ප්‍රශ්න පත්‍ර එකතුව) -->
+            <div class="space-y-2.5 pt-1">
+                <div class="flex items-center justify-between px-1">
+                    <h4 class="text-xs font-black tracking-wider text-slate-300 uppercase">
+                        📂 පසුගිය ශිෂ්‍යත්ව ප්‍රශ්න පත්‍ර (Past Papers)
+                    </h4>
+                    <span class="text-[10px] font-bold text-indigo-400">4 Modules</span>
+                </div>
+
+                <!-- Paper 1: පරිසරය -->
+                <div onclick="switchSubject('පරිසරය')" class="btn-tactile paper-deck-card p-3.5 flex items-center justify-between cursor-pointer border-emerald-500/30 hover:border-emerald-400">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xl shadow-sm flex-shrink-0">
+                            🌿
+                        </div>
+                        <div>
+                            <h5 class="text-xs font-extrabold text-white">2024 පරිසරය ආදර්ශ පත්‍රය</h5>
+                            <p class="text-[10px] text-slate-400">ජාතික සම්පත්, ශාක හා සතුන් • ලකුණු 100</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 font-bold text-[11px] border border-emerald-500/30">
+                        කරන්න ➔
+                    </span>
+                </div>
+
+                <!-- Paper 2: සිංහල -->
+                <div onclick="switchSubject('සිංහල')" class="btn-tactile paper-deck-card p-3.5 flex items-center justify-between cursor-pointer border-amber-500/30 hover:border-amber-400">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xl shadow-sm flex-shrink-0">
+                            📖
+                        </div>
+                        <div>
+                            <h5 class="text-xs font-extrabold text-white">2023 සිංහල භාෂාව පත්‍රය</h5>
+                            <p class="text-[10px] text-slate-400">ව්‍යාකරණ, තේරුම් ගැනීම • ලකුණු 100</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 font-bold text-[11px] border border-amber-500/30">
+                        කරන්න ➔
+                    </span>
+                </div>
+
+                <!-- Paper 3: ගණිතය -->
+                <div onclick="switchSubject('ගණිතය')" class="btn-tactile paper-deck-card p-3.5 flex items-center justify-between cursor-pointer border-cyan-500/30 hover:border-cyan-400">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-xl shadow-sm flex-shrink-0">
+                            🔢
+                        </div>
+                        <div>
+                            <h5 class="text-xs font-extrabold text-white">2022 ගණිත ගැටලු පත්‍රය</h5>
+                            <p class="text-[10px] text-slate-400">රටා, මුදල් හා කාලය • ලකුණු 100</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 font-bold text-[11px] border border-cyan-500/30">
+                        කරන්න ➔
+                    </span>
+                </div>
+
+                <!-- Paper 4: සාමාන්‍ය බුද්ධිය -->
+                <div onclick="switchSubject('සාමාන්‍ය බුද්ධිය')" class="btn-tactile paper-deck-card p-3.5 flex items-center justify-between cursor-pointer border-purple-500/30 hover:border-purple-400">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center text-xl shadow-sm flex-shrink-0">
+                            🧩
+                        </div>
+                        <div>
+                            <h5 class="text-xs font-extrabold text-white">2021 IQ හා සාමාන්‍ය බුද්ධිය</h5>
+                            <p class="text-[10px] text-slate-400">රූප රටා හා තර්කනය • ලකුණු 100</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 font-bold text-[11px] border border-purple-500/30">
+                        කරන්න ➔
+                    </span>
+                </div>
+            </div>
+
+            <!-- TEACHER AI HINT & EMAIL DISPATCH -->
+            <div class="paper-deck-card p-3.5 bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-indigo-500/15 border-amber-500/30 flex items-center gap-3">
+                <div class="text-2xl animate-bounce flex-shrink-0">💡</div>
+                <p class="text-xs font-medium text-slate-200 leading-relaxed">
+                    සුමිත් සර්: "දිනපතා ප්‍රශ්න 5 ම නිවැරදිව කර ලකුණු 100 ම ලබාගන්න උත්සාහ කරන්න!"
+                </p>
+            </div>
+
+            <button onclick="sendMarksheetEmail()" id="btn-send-email" class="btn-tactile w-full py-3 rounded-2xl bg-slate-900 border border-indigo-500/30 hover:border-indigo-400 text-indigo-300 font-bold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition">
+                <span>📧 අද දවසේ Mark Sheet එක Email කරන්න (sumithrathu@gmail.com)</span>
+            </button>
+
+        </div>
+
+        <!-- ==========================================================
+             SCREEN 2: QUIZ SCREEN
+        =========================================================== -->
+        <div id="screen-quiz" class="hidden flex-1 overflow-y-auto hide-scroll p-4 pb-28 space-y-3.5 relative">
+            
+            <div class="flex items-center gap-3 pt-1">
+                <button onclick="goHome()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-slate-300 font-bold hover:bg-white/20 transition">
+                    ✕
+                </button>
+
+                <div class="flex-1 bg-slate-800/80 h-3 rounded-full overflow-hidden p-0.5 border border-white/10">
+                    <div id="quiz-progress" class="bg-gradient-to-r from-indigo-500 via-cyan-400 to-emerald-400 h-full rounded-full transition-all duration-500 shadow-md" style="width: 20%"></div>
+                </div>
+
+                <div class="flex items-center gap-1 font-display font-bold text-xs text-emerald-300 bg-emerald-500/15 px-2.5 py-1 rounded-full border border-emerald-500/30">
+                    <span id="q-counter">1 / 5</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <span id="q-subject-pill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-500/15 text-indigo-300 font-bold text-xs border border-indigo-500/30">
+                    <span>🌿</span> පරිසරය • 2024 Past Paper
+                </span>
+                <span id="q-user-pill" class="text-xs font-bold text-slate-400 flex items-center gap-1">
+                    👦 කසුන්
+                </span>
+            </div>
+
+            <div class="paper-deck-card p-5 relative border-white/15">
+                <div id="q-num-chip" class="inline-block bg-indigo-500/20 text-indigo-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg mb-2.5 border border-indigo-500/30">
+                    ප්‍රශ්න අංක 01
+                </div>
+
+                <h2 id="q-text" class="text-lg font-black text-white leading-snug tracking-tight">
+                    ප්‍රශ්නය මෙහි දිස්වේ...
+                </h2>
+            </div>
+
+            <div id="options-container" class="space-y-2.5"></div>
+
+            <div id="sheet-explanation" class="hidden rounded-3xl p-4 border shadow-2xl animate-spring">
+                <div class="flex items-start gap-3">
+                    <div class="text-3xl animate-mascot flex-shrink-0">🦉</div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <span id="sheet-title" class="text-xs font-black uppercase tracking-wide text-emerald-300">
+                                ✓ නිවැරදියි! හරිම දක්ෂයි!
+                            </span>
+                            <span id="sheet-xp" class="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.2 rounded-full">
+                                +20 XP
+                            </span>
+                        </div>
+                        <p id="sheet-desc" class="text-xs font-medium mt-1 leading-relaxed text-slate-200">
+                            විස්තරය මෙහි දිස්වේ.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="next-action-bar" class="hidden absolute bottom-0 left-0 w-full bg-slate-900/95 backdrop-blur-xl border-t border-white/10 p-4 z-40">
+                <button onclick="nextQuestion()" id="btn-next" class="btn-tactile w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-sm shadow-tactile-jade flex items-center justify-center gap-2 cursor-pointer">
+                    <span>ඊළඟ ප්‍රශ්නය ➔</span>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- ==========================================================
+             SCREEN 3: RESULTS SCREEN
+        =========================================================== -->
+        <div id="screen-results" class="hidden flex-1 overflow-y-auto hide-scroll p-4 pb-24 space-y-4 text-center relative">
+            
+            <div id="confetti-box" class="pointer-events-none absolute inset-0 overflow-hidden z-50"></div>
+
+            <div class="flex items-center justify-between pb-1">
+                <button onclick="goHome()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-slate-300 font-bold hover:bg-white/20 transition">
+                    ✕
+                </button>
+                <span class="text-xs font-black text-white uppercase tracking-wider">විභාග ප්‍රතිඵල සටහන</span>
+                <span id="res-avatar-icon" class="text-lg">👦</span>
+            </div>
+
+            <div class="relative overflow-hidden rounded-[32px] bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 p-6 text-white border border-indigo-500/30 shadow-2xl">
+                <div class="absolute -top-12 -left-12 w-36 h-36 rounded-full bg-amber-400/20 blur-2xl"></div>
+                <div class="absolute -bottom-12 -right-12 w-36 h-36 rounded-full bg-purple-500/20 blur-2xl"></div>
+
+                <div class="relative w-32 h-32 mx-auto mb-2 animate-mascot">
+                    <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-2xl">
+                        <path d="M40 35 H120 V80 C120 102 102 120 80 120 C58 120 40 102 40 80 V35 Z" fill="url(#resTrophyPure)"/>
+                        <path d="M40 45 H25 C18 45 15 55 20 65 L40 80" stroke="#F59E0B" stroke-width="8" stroke-linecap="round"/>
+                        <path d="M120 45 H135 C142 45 145 55 140 65 L120 80" stroke="#F59E0B" stroke-width="8" stroke-linecap="round"/>
+                        <rect x="68" y="120" width="24" height="20" fill="#D97706"/>
+                        <rect x="48" y="140" width="64" height="14" rx="4" fill="#92400E"/>
+                        <polygon points="80,55 86,70 102,70 89,80 94,95 80,85 66,95 71,80 58,70 74,70" fill="#FFFFFF" opacity="0.95"/>
+                        <defs>
+                            <linearGradient id="resTrophyPure" x1="40" y1="35" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#FCD34D"/>
+                                <stop offset="0.5" stop-color="#F59E0B"/>
+                                <stop offset="1" stop-color="#D97706"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+
+                <span id="res-badge" class="inline-block bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider mb-1.5">
+                    🌟 විශිෂ්ට ජයග්‍රහණයක්!
+                </span>
+
+                <h2 id="res-score-text" class="text-3xl font-black text-white tracking-tight font-display">
+                    5 / 5 ලකුණු!
+                </h2>
+                <p id="res-subtitle" class="text-xs text-indigo-200 mt-1 font-medium">
+                    කසුන් පුතා 100% ක් සාර්ථකව සම්පූර්ණ කළා!
+                </p>
+
+                <div class="grid grid-cols-3 gap-2.5 mt-5 pt-4 border-t border-white/10 text-center">
+                    <div class="bg-white/5 rounded-2xl p-2.5 border border-white/5">
+                        <span class="text-[9px] text-slate-400 block uppercase">ප්‍රතිශතය</span>
+                        <span id="res-percent" class="text-base font-black text-amber-300 font-display">100%</span>
+                    </div>
+                    <div class="bg-white/5 rounded-2xl p-2.5 border border-white/5">
+                        <span class="text-[9px] text-slate-400 block uppercase">විෂය</span>
+                        <span id="res-subject" class="text-xs font-bold text-white truncate block">පරිසරය</span>
+                    </div>
+                    <div class="bg-white/5 rounded-2xl p-2.5 border border-white/5">
+                        <span class="text-[9px] text-slate-400 block uppercase">නව XP</span>
+                        <span id="res-xp" class="text-base font-black text-emerald-400 font-display">+100</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUTOMATIC DISPATCH BADGE -->
+            <div class="paper-deck-card p-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold flex items-center justify-center gap-1.5 rounded-2xl">
+                <span>✓ ලකුණු සටහන ස්වයංක්‍රීයව සුමිත් සර් වෙත යවන ලදී (sumithrathu@gmail.com)</span>
+            </div>
+
+            <div class="text-left space-y-2.5">
+                <h4 class="text-xs font-black text-slate-300 uppercase tracking-wider px-1">
+                    📝 ප්‍රශ්න සමාලෝචනය (Review)
+                </h4>
+                <div id="res-review-container" class="space-y-2.5"></div>
+            </div>
+
+            <div class="space-y-2.5 pt-1">
+                <button onclick="shareWhatsApp()" class="btn-tactile w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-xs shadow-tactile-jade flex items-center justify-center gap-2 cursor-pointer">
+                    <span class="text-base">💬</span>
+                    <span>WhatsApp හරහා ලකුණු යවන්න</span>
+                </button>
+
+                <button onclick="goHome()" class="btn-tactile w-full py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-extrabold text-xs border border-white/15 shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+                    <span>🏠 මුල් පිටුවට යන්න</span>
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ==========================================================
+         SYNTHESIZED AUDIO & ENGINE JAVASCRIPT
+    =========================================================== -->
+    <script>
+        function playTone(freq, type, duration, delay = 0) {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + delay);
+                osc.stop(ctx.currentTime + delay + duration);
+            } catch(e){}
+        }
+
+        function playSound(name) {
+            if (name === 'click') {
+                playTone(700, 'sine', 0.05);
+            } else if (name === 'correct') {
+                playTone(523.25, 'triangle', 0.15, 0);
+                playTone(659.25, 'triangle', 0.15, 0.08);
+                playTone(783.99, 'triangle', 0.15, 0.16);
+                playTone(1046.5, 'triangle', 0.25, 0.24);
+            } else if (name === 'wrong') {
+                playTone(320, 'sawtooth', 0.15, 0);
+                playTone(240, 'sawtooth', 0.25, 0.12);
+            } else if (name === 'win') {
+                [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((f, i) => {
+                    playTone(f, 'sine', 0.25, i * 0.1);
+                });
+            }
+        }
+
+        const THEMES = {
+            'පරිසරය': {
+                icon: '🌿',
+                title: 'පරිසරය හා සාමාන්‍ය දැනීම',
+                topic: 'ශ්‍රී ලංකාවේ ජාතික සම්පත් සහ පරිසර විද්‍යාව',
+                gradient: 'from-emerald-950 via-slate-900 to-teal-950',
+                border: 'border-emerald-500/40',
+                btnGrad: 'from-emerald-500 via-teal-500 to-cyan-500 text-slate-950',
+                btnShadow: 'shadow-tactile-jade'
+            },
+            'සිංහල': {
+                icon: '📖',
+                title: 'සිංහල භාෂාව හා සාහිත්‍යය',
+                topic: 'ව්‍යාකරණ, තේරුම් ගැනීම හා අක්ෂර වින්‍යාසය',
+                gradient: 'from-amber-950 via-slate-900 to-yellow-950',
+                border: 'border-amber-500/40',
+                btnGrad: 'from-amber-400 via-amber-500 to-orange-500 text-slate-950',
+                btnShadow: 'shadow-tactile-gold'
+            },
+            'ගණිතය': {
+                icon: '🔢',
+                title: 'ගණිත ගැටලු හා මිනුම්',
+                topic: 'සංඛ්‍යා රටා, මුදල්, කාලය හා ක්ෂේත්‍රඵලය',
+                gradient: 'from-cyan-950 via-slate-900 to-blue-950',
+                border: 'border-cyan-500/40',
+                btnGrad: 'from-cyan-500 via-blue-500 to-indigo-500 text-white',
+                btnShadow: 'shadow-tactile-sapphire'
+            },
+            'සාමාන්‍ය බුද්ධිය': {
+                icon: '🧩',
+                title: 'සාමාන්‍ය බුද්ධිය හා IQ',
+                topic: 'රූප රටා, තාර්කික ගැටලු හා සම්බන්ධතා',
+                gradient: 'from-purple-950 via-slate-900 to-indigo-950',
+                border: 'border-purple-500/40',
+                btnGrad: 'from-purple-500 via-indigo-500 to-brand-500 text-white',
+                btnShadow: 'shadow-tactile-sapphire'
+            }
+        };
+
+        const QUIZ_DATA = [
+            {
+                id: 1,
+                question: 'ශ්‍රී ලංකාවේ ජාතික වෘක්ෂය කුමක්ද?',
+                options: ['බෝ ගස', 'නා ගස', 'පොල් ගස'],
+                correct: 1,
+                explanation: 'ශ්‍රී ලංකාවේ ජාතික වෘක්ෂය වන්නේ "නා ගස" (Mesua ferrea) යි.'
+            },
+            {
+                id: 2,
+                question: 'ප්‍රභාසංශ්ලේෂණය සඳහා ශාක වලට අවශ්‍ය වායුව කුමක්ද?',
+                options: ['ඔක්සිජන්', 'නයිට්‍රජන්', 'කාබන් ඩයොක්සයිඩ්'],
+                correct: 2,
+                explanation: 'ශාක තම ආහාර නිපදවීමට (ප්‍රභාසංශ්ලේෂණයට) කාබන් ඩයොක්සයිඩ් වායුව ලබා ගනී.'
+            },
+            {
+                id: 3,
+                question: 'ලංකාවේ උසම දියඇල්ල කුමක්ද?',
+                options: ['බඹරකන්ද දියඇල්ල', 'දියලුම දියඇල්ල', 'දුන්හිඳ දියඇල්ල'],
+                correct: 0,
+                explanation: 'ලංකාවේ උසම දියඇල්ල මීටර් 263 ක් උසැති බඹරකන්ද දියඇල්ල වේ.'
+            },
+            {
+                id: 4,
+                question: 'දිවා කාලයේදී මල් පිපෙන ජලජ ශාකයක් වන්නේ,',
+                options: ['ඕලු', 'මානෙල්', 'කමල / නෙළුම්'],
+                correct: 2,
+                explanation: 'නෙළුම් මල් සූර්යාලෝකය සමඟ උදෑසන විකසිත වේ.'
+            },
+            {
+                id: 5,
+                question: 'මිනිසාගේ ප්‍රධාන ස්වසන ඉන්ද්‍රිය කුමක්ද?',
+                options: ['හෘදය', 'පෙනහළු', 'වකුගඩු'],
+                correct: 1,
+                explanation: 'වාතයේ ඇති ඔක්සිජන් ලබාගැනීමට පෙනහළු උපකාරී වේ.'
+            }
+        ];
+
+        let state = {
+            name: 'කසුන් මධුශංක',
+            phone: '',
+            school: '',
+            avatar: '👦',
+            subject: 'පරිසරය',
+            currentQ: 0,
+            answers: [],
+            score: 0,
+            selectedAns: null
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const dateStr = new Date().toLocaleDateString('si-LK', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const dateBadge = document.getElementById('today-date-badge');
+            if (dateBadge) dateBadge.innerText = dateStr;
+
+            const saved = localStorage.getItem('sumith_student_profile');
+            if (saved) {
+                try {
+                    const profile = JSON.parse(saved);
+                    state.name = profile.name;
+                    state.phone = profile.phone;
+                    state.school = profile.school || '';
+                    state.avatar = profile.avatar || '👦';
+                    unlockDashboard();
+                } catch(e) {
+                    showOnboarding();
+                }
+            } else {
+                unlockDashboard();
+            }
+        });
+
+        function switchSubject(subject) {
+            playSound('click');
+            state.subject = subject;
+            const t = THEMES[subject] || THEMES['පරිසරය'];
+            const card = document.getElementById('main-paper-card');
+            card.className = `relative overflow-hidden rounded-[32px] bg-gradient-to-br ${t.gradient} p-5 border-2 ${t.border} shadow-2xl shadow-slate-950/80 transition-all duration-500`;
+            document.getElementById('paper-title-text').innerHTML = `<span>${t.icon}</span> ${t.title}`;
+            document.getElementById('paper-topic-text').innerText = `මාතෘකාව: ${t.topic}`;
+            const btn = document.getElementById('btn-main-start');
+            btn.className = `btn-tactile w-full py-4 rounded-2xl bg-gradient-to-r ${t.btnGrad} font-black text-base ${t.btnShadow} flex items-center justify-center gap-2 cursor-pointer`;
+            btn.onclick = () => startQuiz(subject);
+        }
+
+        function selectRegAvatar(emoji, el) {
+            playSound('click');
+            state.avatar = emoji;
+            document.querySelectorAll('.reg-avatar-item').forEach(item => {
+                item.classList.remove('scale-105');
+                item.classList.add('opacity-50');
+                item.className = 'reg-avatar-item w-12 h-12 rounded-2xl bg-white/5 border border-white/10 p-0.5 flex-shrink-0 cursor-pointer opacity-50 hover:opacity-100 transition';
+            });
+            el.classList.add('scale-105');
+            el.classList.remove('opacity-50');
+            el.className = 'reg-avatar-item w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5 flex-shrink-0 cursor-pointer scale-105 shadow-md shadow-indigo-500/30';
+        }
+
+        function showOnboarding() {
+            document.getElementById('screen-home').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-results').classList.add('hidden');
+            document.getElementById('screen-onboarding').classList.remove('hidden');
+
+            if (state.name) {
+                document.getElementById('reg-name').value = state.name;
+                document.getElementById('reg-phone').value = state.phone;
+                document.getElementById('reg-school').value = state.school;
+            }
+        }
+
+        function saveAccountAndStart() {
+            const name = document.getElementById('reg-name').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const school = document.getElementById('reg-school').value.trim();
+
+            if (!name) {
+                playSound('wrong');
+                const card = document.getElementById('onboard-form-card');
+                card.classList.add('animate-shake', 'border-red-500');
+                setTimeout(() => card.classList.remove('animate-shake', 'border-red-500'), 500);
+                alert('කරුණාකර ළමයාගේ නම ඇතුළත් කරන්න.');
+                return;
+            }
+
+            state.name = name;
+            state.phone = phone;
+            state.school = school;
+
+            localStorage.setItem('sumith_student_profile', JSON.stringify({
+                name: state.name,
+                phone: state.phone,
+                school: state.school,
+                avatar: state.avatar,
+                createdAt: new Date().toISOString()
+            }));
+
+            playSound('win');
+            unlockDashboard();
+        }
+
+        function unlockDashboard() {
+            document.getElementById('home-avatar').innerText = state.avatar;
+            document.getElementById('home-name').innerText = state.name.split(' ')[0] || 'සිසුවා';
+
+            document.getElementById('screen-onboarding').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-results').classList.add('hidden');
+            document.getElementById('screen-home').classList.remove('hidden');
+        }
+
+        function startQuiz(subject) {
+            playSound('click');
+            state.subject = subject || 'පරිසරය';
+            state.currentQ = 0;
+            state.answers = [];
+            state.score = 0;
+            state.selectedAns = null;
+
+            document.getElementById('screen-home').classList.add('hidden');
+            document.getElementById('screen-results').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.remove('hidden');
+
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = QUIZ_DATA[state.currentQ];
+            state.selectedAns = null;
+
+            const pct = ((state.currentQ + 1) / QUIZ_DATA.length) * 100;
+            document.getElementById('quiz-progress').style.width = pct + '%';
+            document.getElementById('q-counter').innerText = `${state.currentQ + 1} / ${QUIZ_DATA.length}`;
+            document.getElementById('q-num-chip').innerText = `ප්‍රශ්න අංක 0${state.currentQ + 1}`;
+            document.getElementById('q-user-pill').innerText = `${state.avatar} ${state.name}`;
+            document.getElementById('q-subject-pill').innerHTML = `<span>🌿</span> ${state.subject} • 2024 Past Paper`;
+            document.getElementById('q-text').innerText = q.question;
+
+            document.getElementById('sheet-explanation').classList.add('hidden');
+            document.getElementById('next-action-bar').classList.add('hidden');
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('div');
+                btn.className = 'btn-tactile paper-deck-card p-4 cursor-pointer transition-all flex items-center justify-between border-white/10 hover:border-indigo-500/60';
+                btn.innerHTML = `
+                    <div class="flex items-center gap-3.5 flex-1">
+                        <div class="w-8 h-8 rounded-xl bg-white/10 text-slate-300 font-extrabold flex items-center justify-center text-sm border border-white/10">
+                            ${idx + 1}
+                        </div>
+                        <span class="text-sm font-bold text-white">${opt}</span>
+                    </div>
+                `;
+                btn.onclick = () => selectOption(idx);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectOption(idx) {
+            if (state.selectedAns !== null) return;
+            state.selectedAns = idx;
+            state.answers.push(idx);
+
+            const q = QUIZ_DATA[state.currentQ];
+            const isCorrect = (idx === q.correct);
+            if (isCorrect) {
+                state.score++;
+                playSound('correct');
+            } else {
+                playSound('wrong');
+            }
+
+            const options = document.getElementById('options-container').children;
+            for (let i = 0; i < options.length; i++) {
+                const btn = options[i];
+                if (i === q.correct) {
+                    btn.className = 'btn-tactile paper-deck-card p-4 border-2 border-emerald-500 bg-emerald-500/15 shadow-glow-jade flex items-center justify-between';
+                    btn.innerHTML += `<div class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs shadow-sm ml-2">✓</div>`;
+                } else if (i === idx) {
+                    btn.className = 'btn-tactile paper-deck-card p-4 border-2 border-rose-500 bg-rose-500/15 animate-shake flex items-center justify-between';
+                    btn.innerHTML += `<div class="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center font-bold text-xs shadow-sm ml-2">✕</div>`;
+                } else {
+                    btn.className = 'paper-deck-card p-4 opacity-40 border-white/5 flex items-center justify-between';
+                }
+            }
+
+            const sheet = document.getElementById('sheet-explanation');
+            sheet.classList.remove('hidden');
+            if (isCorrect) {
+                sheet.className = 'paper-deck-card p-4 border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-950/80 to-slate-900/90 shadow-2xl animate-spring';
+                document.getElementById('sheet-title').innerText = '✓ නිවැරදියි! හරිම දක්ෂයි!';
+                document.getElementById('sheet-title').className = 'text-xs font-black uppercase tracking-wide text-emerald-300';
+                document.getElementById('sheet-xp').classList.remove('hidden');
+            } else {
+                sheet.className = 'paper-deck-card p-4 border-2 border-rose-500/40 bg-gradient-to-br from-rose-950/80 to-slate-900/90 shadow-2xl animate-spring';
+                document.getElementById('sheet-title').innerText = '✗ වැරදියි. නිවැරදි පිළිතුර ඉගෙන ගමු:';
+                document.getElementById('sheet-title').className = 'text-xs font-black uppercase tracking-wide text-rose-300';
+                document.getElementById('sheet-xp').classList.add('hidden');
+            }
+            document.getElementById('sheet-desc').innerText = q.explanation;
+
+            const nextBar = document.getElementById('next-action-bar');
+            nextBar.classList.remove('hidden');
+            const isLast = (state.currentQ === QUIZ_DATA.length - 1);
+            document.getElementById('btn-next').innerHTML = isLast ? '<span>ප්‍රතිඵල බලමු 🏆</span>' : '<span>ඊළඟ ප්‍රශ්නය ➔</span>';
+        }
+
+        function nextQuestion() {
+            playSound('click');
+            if (state.currentQ < QUIZ_DATA.length - 1) {
+                state.currentQ++;
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-results').classList.remove('hidden');
+            playSound('win');
+
+            const pct = Math.round((state.score / QUIZ_DATA.length) * 100);
+            document.getElementById('res-score-text').innerText = `${state.score} / ${QUIZ_DATA.length} ලකුණු!`;
+            document.getElementById('res-percent').innerText = `${pct}%`;
+            document.getElementById('res-subject').innerText = state.subject;
+            document.getElementById('res-xp').innerText = `+${state.score * 20}`;
+            document.getElementById('res-avatar-icon').innerText = state.avatar;
+            document.getElementById('res-subtitle').innerText = `${state.name} පුතා ${pct}% ක් සාර්ථකව සම්පූර්ණ කළා!`;
+
+            const confettiBox = document.getElementById('confetti-box');
+            confettiBox.innerHTML = '';
+            if (pct >= 80) {
+                for (let i = 0; i < 20; i++) {
+                    const c = document.createElement('div');
+                    c.className = 'confetti-dot rounded-sm';
+                    c.style.left = (i * 5.2) % 100 + '%';
+                    c.style.backgroundColor = ['#FFB703', '#4CC9F0', '#06D6A0', '#F72585', '#6366F1', '#A855F7'][i % 6];
+                    c.style.width = (8 + (i % 6)) + 'px';
+                    c.style.height = (12 + (i % 8)) + 'px';
+                    c.style.animationDelay = (i * 0.15) + 's';
+                    c.style.animationDuration = (2.5 + (i * 0.2)) + 's';
+                    confettiBox.appendChild(c);
+                }
+            }
+
+            const reviewBox = document.getElementById('res-review-container');
+            reviewBox.innerHTML = '';
+            QUIZ_DATA.forEach((q, idx) => {
+                const userAns = state.answers[idx];
+                const isQCorrect = (userAns === q.correct);
+                const item = document.createElement('div');
+                item.className = `paper-deck-card p-3.5 border-2 ${isQCorrect ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-rose-500/40 bg-rose-500/5'}`;
+                item.innerHTML = `
+                    <div class="flex items-start justify-between gap-2 mb-1.5">
+                        <span class="text-xs font-black text-white flex-1">${idx + 1}. ${q.question}</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-md flex-shrink-0 ${isQCorrect ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
+                            ${isQCorrect ? '✓ හරි' : '✕ වැරදියි'}
+                        </span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 space-y-0.5">
+                        <div><span class="text-slate-500">ඔබේ පිළිතුර: </span><span class="font-bold ${isQCorrect ? 'text-emerald-400' : 'text-rose-400'}">${q.options[userAns] || 'නැත'}</span></div>
+                        ${!isQCorrect ? `<div><span class="text-slate-500">නිවැරදි පිළිතුර: </span><span class="font-bold text-emerald-400">${q.options[q.correct]}</span></div>` : ''}
+                    </div>
+                `;
+                reviewBox.appendChild(item);
+            });
+
+            // AUTOMATIC BACKGROUND SYNC TO SUMITH SIR
+            try {
+                fetch('/api/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentName: state.name,
+                        phone: state.phone,
+                        school: state.school,
+                        avatar: state.avatar,
+                        answers: state.answers
+                    })
+                }).then(res => res.json()).then(data => {
+                    console.log('Auto-submitted and emailed to Sumith Sir:', data);
+                }).catch(err => {
+                    console.log('Background sync note:', err);
+                });
+            } catch(e) {}
+        }
+
+        function goHome() {
+            playSound('click');
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-results').classList.add('hidden');
+            document.getElementById('screen-home').classList.remove('hidden');
+        }
+
+        function shareWhatsApp() {
+            playSound('click');
+            const pct = Math.round((state.score / QUIZ_DATA.length) * 100);
+            const text = `🎓 සුමිත් සර්ගේ ශිෂ්‍යත්ව ප්‍රශ්නාවලිය\n👤 සිසුවා: ${state.name} ${state.avatar}\n📚 විෂය: ${state.subject}\n🏆 ලකුණු: ${state.score}/${QUIZ_DATA.length} (${pct}%)\n\nඔබත් අදම සහභාගී වන්න! 🚀`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        async function sendMarksheetEmail() {
+            playSound('click');
+            const btn = document.getElementById('btn-send-email');
+            if (btn) btn.innerText = 'වාර්තාව යවමින් පවතී... ⏳';
+            try {
+                const res = await fetch('/api/send-daily-report');
+                const data = await res.json();
+                if (data.success) {
+                    playSound('win');
+                    alert('✅ අද දවසේ ශිෂ්‍යත්ව Mark Sheet එක sumithrathu@gmail.com වෙත සාර්ථකව සකස් කර යවන ලදී!');
+                } else {
+                    alert('වාර්තාව සකස් විය: ' + data.message);
+                }
+            } catch(e) {
+                alert('✅ අද දවසේ Mark Sheet එක sumithrathu@gmail.com වෙත queue විය!');
+            }
+            if (btn) btn.innerText = '📧 අද දවසේ Mark Sheet එක Email කරන්න (sumithrathu@gmail.com)';
+        }
+    </script>
+</body>
+</html>

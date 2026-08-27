@@ -1,6 +1,7 @@
-﻿'use client'
+'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { OwlMascot } from './Illustrations'
 
 type Message = {
   id: string
@@ -98,23 +99,23 @@ export default function AiAssistant() {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-5 py-3.5 text-white shadow-2xl shadow-indigo-500/50 hover:scale-105 active:scale-95 transition-all border-2 border-white/80"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-4 py-3 text-white shadow-2xl shadow-indigo-500/50 hover:scale-105 active:scale-95 transition-all border-2 border-white/80 cursor-pointer"
         aria-label="Ask AI Assistant"
       >
-        <span className="text-2xl animate-pulse">🤖</span>
+        <OwlMascot className="w-8 h-8" />
         <span className="font-extrabold text-sm hidden sm:inline">සුමිත් සර් AI සහයක</span>
         <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
       </button>
 
       {/* Chat Drawer / Modal */}
       {isOpen && (
-        <div className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 z-50 w-full sm:w-[420px] h-full sm:h-[580px] bg-white sm:rounded-3xl shadow-2xl border border-blue-100 flex flex-col overflow-hidden animate-slide-up">
+        <div className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 z-50 w-full sm:w-[420px] h-full sm:h-[580px] bg-white sm:rounded-3xl shadow-2xl border-2 border-indigo-100 flex flex-col overflow-hidden animate-slide-up">
           
           {/* Chat Header */}
           <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 p-4 text-white flex items-center justify-between shadow-md">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur text-2xl border border-white/20">
-                👨‍🏫
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur border border-white/20">
+                <OwlMascot className="w-9 h-9" />
               </div>
               <div>
                 <h3 className="font-black text-base leading-tight flex items-center gap-1.5">
@@ -126,7 +127,7 @@ export default function AiAssistant() {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-black text-lg transition-all"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-black text-lg transition-all cursor-pointer"
             >
               ✕
             </button>
@@ -138,7 +139,7 @@ export default function AiAssistant() {
               <button
                 key={i}
                 onClick={() => handleSend(prompt)}
-                className="shrink-0 px-3 py-1 rounded-full bg-white text-xs font-bold text-blue-800 border border-blue-200 hover:bg-blue-600 hover:text-white transition-all shadow-2xs"
+                className="shrink-0 px-3 py-1 rounded-full bg-white text-xs font-bold text-blue-800 border border-blue-200 hover:bg-blue-600 hover:text-white transition-all shadow-xs cursor-pointer"
               >
                 {prompt}
               </button>
@@ -154,7 +155,7 @@ export default function AiAssistant() {
               >
                 {m.role === 'model' && (
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white text-base shadow-sm">
-                    🤖
+                    <OwlMascot className="w-6 h-6" />
                   </div>
                 )}
                 <div
@@ -179,7 +180,7 @@ export default function AiAssistant() {
             {loading && (
               <div className="flex gap-2.5 justify-start items-center">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white text-sm">
-                  🤖
+                  <OwlMascot className="w-6 h-6" />
                 </div>
                 <div className="bg-white border border-blue-100 p-3 rounded-2xl rounded-tl-xs shadow-sm flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-blue-600 animate-bounce" />
@@ -211,7 +212,7 @@ export default function AiAssistant() {
               <button
                 type="submit"
                 disabled={!input.trim() || loading}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md hover:bg-blue-700 disabled:opacity-40 transition-all active:scale-95"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md hover:bg-blue-700 disabled:opacity-40 transition-all active:scale-95 cursor-pointer"
               >
                 ➔
               </button>

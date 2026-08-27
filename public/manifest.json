@@ -1,0 +1,17 @@
+{
+  "name": "සුමිත් සර්ගේ ශිෂ්‍යත්ව පෙරහුරුව",
+  "short_name": "ශිෂ්‍යත්ව App",
+  "description": "5 ශ්‍රේණිය ශිෂ්‍යත්ව විභාගයට සූදානම් වීමට දෛනික MCQ ප්‍රශ්නාවලිය",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#4F46E5",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

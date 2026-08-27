@@ -2,11 +2,14 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { playSound } from '../utils/sound'
 
 type Question = {
   id: number
   question: string
   options: string[]
+  correctAnswer?: number
+  explanation?: string
 }
 
 type QuizApiResponse = {
@@ -21,7 +24,7 @@ type QuizApiResponse = {
 function QuizContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const studentName = searchParams.get('name') || 'සිසුවා'
+  const studentName = searchParams.get('name') || 'කසුන්'
   const avatar = searchParams.get('avatar') || '👦'
 
   const [loading, setLoading] = useState(true)
@@ -42,8 +45,8 @@ function QuizContent() {
             setQuizData(data)
           }
         }
-      } catch {
-        // silently fail
+      } catch (err) {
+        console.error('Quiz fetch failed', err)
       } finally {
         setLoading(false)
       }
@@ -53,206 +56,266 @@ function QuizContent() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-50 to-indigo-50 p-4">
-        <div className="text-center p-8 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border-4 border-indigo-100 max-w-sm w-full animate-slide-up">
-          <div className="text-6xl mb-4 animate-bounce">📝</div>
-          <p className="text-2xl font-black text-indigo-900">ප්‍රශ්න පූරණය වෙමින් පවතී...</p>
-          <p className="text-sm font-bold text-indigo-500 mt-2">සුළු මොහොතක් රැඳී සිටින්න ⏳</p>
+      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#F8FAFC]">
+        <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-3xl animate-bounce mb-3 shadow-inner">
+          📝
         </div>
+        <p className="text-sm font-black text-slate-800">ප්‍රශ්න සූදානම් වෙමින්...</p>
       </div>
     )
   }
 
   if (!quizData || !quizData.questions || quizData.questions.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-b from-sky-50 to-indigo-50">
-        <div className="text-center rounded-3xl bg-white p-8 shadow-2xl max-w-md w-full border-4 border-indigo-100">
-          <div className="text-6xl mb-4">📚</div>
-          <p className="text-2xl font-black text-indigo-950 mb-2">ප්‍රශ්න සූදානම් කරමින්</p>
-          <p className="text-slate-600 mb-6 font-bold">අද දින ප්‍රශ්නාවලිය ආරම්භ කිරීමට සූදානම් වන්න</p>
-          <button
-            onClick={() => router.push('/')}
-            className="w-full rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-lg py-4 shadow-[0_5px_0_#059669] active:translate-y-1 active:shadow-[0_1px_0_#059669] transition-all"
-          >
-            මුල් පිටුවට යන්න 🏠
-          </button>
-        </div>
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <span className="text-4xl mb-2">🏖️</span>
+        <h3 className="font-extrabold text-slate-800 text-base mb-1">අද දින ප්‍රශ්නාවලියක් නොමැත</h3>
+        <p className="text-xs text-slate-500 mb-4">කරුණාකර හෙට නැවත පැමිණෙන්න!</p>
+        <button
+          onClick={() => {
+            playSound('click')
+            router.push('/')
+          }}
+          className="btn-3d px-5 py-2.5 rounded-2xl bg-indigo-600 text-white font-black text-xs shadow-tactile-blue"
+        >
+          මුල් පිටුවට 🏠
+        </button>
       </div>
     )
   }
 
-  const question = quizData.questions[currentQuestion]
+  const q = quizData.questions[currentQuestion]
   const isLastQuestion = currentQuestion === quizData.questions.length - 1
-  const optionLabels = ['(1)', '(2)', '(3)']
+  const progressPercent = ((currentQuestion + 1) / quizData.questions.length) * 100
 
-  const handleOptionClick = (index: number) => {
+  const correctAnswerIndex = q.correctAnswer !== undefined ? q.correctAnswer : 1
+  const isCorrect = selectedAnswer === correctAnswerIndex
+
+  const handleSelectOption = (idx: number) => {
     if (showResult) return
-    setSelectedAnswer(index)
+    setSelectedAnswer(idx)
     setShowResult(true)
-    const newAnswers = [...answers, index]
-    setAnswers(newAnswers)
+    setAnswers((prev) => [...prev, idx])
+
+    if (idx === correctAnswerIndex) {
+      playSound('correct')
+    } else {
+      playSound('wrong')
+    }
   }
 
   const handleNext = async () => {
+    playSound('click')
     if (isLastQuestion) {
       setSubmitting(true)
       try {
-        const res = await fetch('/api/submit', {
+        const payload = {
+          studentName,
+          answers: [...answers],
+        }
+        await fetch('/api/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ studentName, answers })
+          body: JSON.stringify(payload),
         })
 
-        if (res.ok) {
-          const data = await res.json()
-          sessionStorage.setItem('quizResults', JSON.stringify({ ...data, avatar }))
-        } else {
-          sessionStorage.setItem('quizResults', JSON.stringify({
+        // Calculate score
+        let score = 0
+        quizData.questions.forEach((question, i) => {
+          const ans = i < answers.length ? answers[i] : selectedAnswer
+          const correct = question.correctAnswer !== undefined ? question.correctAnswer : 1
+          if (ans === correct) score++
+        })
+
+        sessionStorage.setItem(
+          'quizResults',
+          JSON.stringify({
             studentName,
             avatar,
-            score: 0,
-            totalQuestions: quizData.questions.length,
-            results: [],
-            error: true
-          }))
-        }
-      } catch {
-        sessionStorage.setItem('quizResults', JSON.stringify({
-          studentName,
-          avatar,
-          score: 0,
-          totalQuestions: quizData.questions.length,
-          results: [],
-          error: true
-        }))
-      }
+            subject: quizData.subject,
+            topic: quizData.topic,
+            subjectEmoji: quizData.subjectEmoji,
+            score: score,
+            total: quizData.questions.length,
+            answers: [...answers],
+            questions: quizData.questions,
+          })
+        )
 
-      router.push('/results')
+        router.push('/results')
+      } catch (e) {
+        console.error('Submission failed', e)
+        router.push('/results')
+      }
     } else {
-      setCurrentQuestion(prev => prev + 1)
+      setCurrentQuestion((prev) => prev + 1)
       setSelectedAnswer(null)
       setShowResult(false)
     }
   }
 
   return (
-    <main className="min-h-screen py-6 px-4 flex flex-col justify-between max-w-lg mx-auto">
+    <div className="flex-1 flex flex-col h-full bg-[#F8FAFC] relative overflow-hidden">
       
-      {/* Top Header Card */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border-2 border-indigo-100 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-3xl p-1 bg-indigo-50 rounded-2xl border border-indigo-100">{avatar}</span>
-            <div>
-              <p className="text-[11px] font-black uppercase text-indigo-400">ශිෂ්‍යයා</p>
-              <p className="font-black text-indigo-950 text-base leading-tight">{studentName}</p>
-            </div>
-          </div>
-          <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-sm shadow-md">
-            ප්‍රශ්නය {currentQuestion + 1} / {quizData.questions.length}
-          </div>
-        </div>
+      {/* QUIZ APP HEADER */}
+      <div className="pt-3 px-4 pb-2.5 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center gap-3">
+        <button
+          onClick={() => {
+            playSound('click')
+            router.push('/')
+          }}
+          className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold hover:bg-slate-200 transition"
+        >
+          ✕
+        </button>
 
-        {/* Progress Bar */}
-        <div className="h-4 w-full rounded-full bg-indigo-50 overflow-hidden p-0.5 border border-indigo-100">
+        {/* Segmented Duolingo Progress Bar */}
+        <div className="flex-1 bg-slate-200 h-3 rounded-full overflow-hidden p-0.5 shadow-inner">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400 transition-all duration-500 shadow-sm"
-            style={{ width: `${((currentQuestion + (showResult ? 1 : 0)) / quizData.questions.length) * 100}%` }}
-          />
+            className="bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 h-full rounded-full transition-all duration-500 shadow-sm"
+            style={{ width: `${progressPercent}%` }}
+          ></div>
         </div>
 
-        {/* Subject Pill */}
-        <div className="mt-3 text-center">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-900 text-xs font-black border border-indigo-100">
-            <span>{quizData.subjectEmoji || '📚'}</span>
-            <span>{quizData.subject} • {quizData.topic}</span>
-          </span>
+        <div className="flex items-center gap-1 font-bold text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shadow-xs">
+          <span>{currentQuestion + 1} / {quizData.questions.length}</span>
         </div>
       </div>
 
-      {/* Question Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-2xl shadow-indigo-100/70 border-4 border-indigo-100/80 flex-1 flex flex-col justify-between my-2">
-        <div>
-          {/* Question Number Badge */}
-          <div className="inline-block px-3 py-1 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black mb-3">
+      {/* QUIZ BODY */}
+      <div className="flex-1 overflow-y-auto hide-scroll p-4 pb-28 space-y-3.5">
+        
+        {/* Subject & Timer Capsule */}
+        <div className="flex items-center justify-between">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-100/80 text-indigo-900 font-bold text-xs border border-indigo-200/50">
+            <span>{quizData.subjectEmoji || '🌿'}</span> {quizData.subject} • {quizData.topic}
+          </span>
+          <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+            {avatar} {studentName}
+          </span>
+        </div>
+
+        {/* QUESTION CARD */}
+        <div className="glow-border-card p-5 relative">
+          <div className="inline-block bg-indigo-50 text-indigo-700 text-[11px] font-extrabold px-2.5 py-0.5 rounded-lg mb-2.5 border border-indigo-100">
             ප්‍රශ්න අංක 0{currentQuestion + 1}
           </div>
 
-          {/* Question Title */}
-          <h2 className="mb-6 text-xl sm:text-2xl font-black text-indigo-950 leading-snug">
-            {question.question}
+          <h2 className="text-lg font-black text-slate-900 leading-snug">
+            {q.question}
           </h2>
-
-          {/* Options (3D interactive cards) */}
-          <div className="flex flex-col gap-3.5">
-            {question.options.map((opt, idx) => {
-              let btnClass = 'bg-slate-50 border-2 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 text-slate-800 shadow-[0_4px_0_#cbd5e1]'
-              let iconClass = 'bg-slate-200 text-slate-700'
-
-              if (showResult && selectedAnswer === idx) {
-                btnClass = 'bg-indigo-50 border-2 border-indigo-600 text-indigo-950 font-black shadow-[0_4px_0_#4f46e5] ring-2 ring-indigo-300'
-                iconClass = 'bg-indigo-600 text-white'
-              }
-
-              return (
-                <button
-                  key={idx}
-                  onClick={() => handleOptionClick(idx)}
-                  disabled={showResult}
-                  className={`flex items-center gap-3.5 rounded-2xl p-4 text-left text-base sm:text-lg w-full min-h-[62px] ${btnClass} transition-all active:translate-y-1 active:shadow-[0_1px_0_#cbd5e1] disabled:cursor-default cursor-pointer`}
-                >
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-sm transition-all ${iconClass}`}>
-                    {optionLabels[idx]}
-                  </span>
-                  <span className="leading-relaxed font-bold flex-1">{opt}</span>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Answer Recorded Feedback */}
-          {showResult && (
-            <div className="mt-5 rounded-2xl bg-emerald-50 p-4 border-2 border-emerald-300 animate-slide-up flex items-center gap-3 shadow-xs">
-              <span className="text-3xl animate-bounce">✨</span>
-              <div>
-                <p className="font-black text-emerald-950 text-sm">ඔබේ පිළිතුර සටහන් විය!</p>
-                <p className="text-emerald-700 text-xs font-bold">අවසානයේ සියලු නිවැරදි පිළිතුරු විවරණ බලාගත හැක.</p>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Next / Finish 3D Button */}
+        {/* TACTILE OPTION BUTTONS */}
+        <div className="space-y-2.5">
+          {q.options.map((opt, idx) => {
+            const isSelected = selectedAnswer === idx
+            let buttonStyle = 'bg-white border-2 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30'
+            let badgeStyle = 'bg-slate-100 text-slate-700'
+
+            if (showResult) {
+              if (idx === correctAnswerIndex) {
+                buttonStyle = 'bg-emerald-50 border-2 border-emerald-500 shadow-md shadow-emerald-500/10'
+                badgeStyle = 'bg-emerald-500 text-white'
+              } else if (isSelected) {
+                buttonStyle = 'bg-rose-50 border-2 border-rose-400 animate-shake'
+                badgeStyle = 'bg-rose-500 text-white'
+              } else {
+                buttonStyle = 'bg-white border border-slate-100 opacity-50'
+              }
+            }
+
+            return (
+              <div
+                key={idx}
+                onClick={() => handleSelectOption(idx)}
+                className={`btn-3d rounded-2xl p-4 cursor-pointer transition-all flex items-center justify-between shadow-xs ${buttonStyle}`}
+              >
+                <div className="flex items-center gap-3.5 flex-1">
+                  <div className={`w-8 h-8 rounded-xl font-extrabold flex items-center justify-center text-sm flex-shrink-0 ${badgeStyle}`}>
+                    {idx + 1}
+                  </div>
+                  <span className={`text-sm font-bold text-slate-800 ${showResult && idx === correctAnswerIndex ? 'text-emerald-950 font-black' : ''}`}>
+                    {opt}
+                  </span>
+                </div>
+
+                {showResult && idx === correctAnswerIndex && (
+                  <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shadow-sm ml-2">
+                    ✓
+                  </div>
+                )}
+                {showResult && isSelected && idx !== correctAnswerIndex && (
+                  <div className="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center font-bold text-xs shadow-sm ml-2">
+                    ✕
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* SLIDE-UP EXPLANATION BOTTOM SHEET */}
         {showResult && (
-          <div className="mt-6 pt-4 border-t border-slate-100">
-            <button
-              onClick={handleNext}
-              disabled={submitting}
-              className="w-full rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xl px-6 py-4 shadow-[0_6px_0_#059669] active:translate-y-1 active:shadow-[0_2px_0_#059669] disabled:opacity-50 min-h-[58px] transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>{submitting ? '⏳ ලකුණු සටහන් කරමින්...' : isLastQuestion ? '🏆 ප්‍රතිඵල බලමු!' : 'ඊළඟ ප්‍රශ්නය'}</span>
-              {!submitting && <span>{isLastQuestion ? '🎉' : '→'}</span>}
-            </button>
+          <div className={`rounded-3xl p-4 border-2 shadow-sm animate-pop-bounce ${
+            isCorrect
+              ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-300'
+              : 'bg-gradient-to-br from-rose-50 to-amber-50 border-rose-300'
+          }`}>
+            <div className="flex items-start gap-3">
+              <div className="text-2xl animate-float">🦉</div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-black uppercase tracking-wide ${isCorrect ? 'text-emerald-800' : 'text-rose-800'}`}>
+                    {isCorrect ? '✓ නිවැරදියි! හරිම දක්ෂයි!' : '✗ වැරදියි. නිවැරදි පිළිතුර ඉගෙන ගමු:'}
+                  </span>
+                  {isCorrect && (
+                    <span className="text-[10px] font-bold bg-emerald-200 text-emerald-900 px-2 py-0.2 rounded-full shadow-xs">
+                      +20 XP
+                    </span>
+                  )}
+                </div>
+                <p className={`text-xs font-semibold mt-1 leading-relaxed ${isCorrect ? 'text-emerald-950' : 'text-slate-800'}`}>
+                  {q.explanation || (isCorrect ? 'ඔබ තෝරාගත් පිළිතුර ඉතාම නිවැරදියි!' : `නිවැරදි පිළිතුර වන්නේ "${q.options[correctAnswerIndex]}" වේ.`)}
+                </p>
+              </div>
+            </div>
           </div>
         )}
+
       </div>
 
-      {/* Encouragement Footer */}
-      <div className="text-center text-xs font-bold text-slate-400 mt-2">
-        🎯 5 ශ්‍රේණිය ශිෂ්‍යත්ව ප්‍රශ්නාවලිය • සුමිත් සර්
-      </div>
+      {/* STICKY BOTTOM ACTION BAR */}
+      {showResult && (
+        <div className="absolute bottom-0 left-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200 p-4 z-40">
+          <button
+            onClick={handleNext}
+            disabled={submitting}
+            className={`btn-3d w-full py-4 rounded-2xl text-white font-black text-sm flex items-center justify-center gap-2 cursor-pointer ${
+              isCorrect ? 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-tactile-green' : 'bg-gradient-to-r from-indigo-600 to-blue-600 shadow-tactile-blue'
+            }`}
+          >
+            <span>{isLastQuestion ? (submitting ? 'ප්‍රතිඵල සූදානම් වෙමින්...' : 'ප්‍රතිඵල බලමු 🏆') : 'ඊළඟ ප්‍රශ්නය ➔'}</span>
+          </button>
+        </div>
+      )}
 
-    </main>
+    </div>
   )
 }
 
 export default function QuizPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-sky-50 text-indigo-900">
-        <p className="text-xl font-black animate-pulse">📝 පූරණය වෙමින්...</p>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#F8FAFC]">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-3xl animate-bounce mb-3 shadow-inner">
+            🎓
+          </div>
+          <p className="text-sm font-extrabold text-slate-700">ප්‍රශ්නාවලිය ආරම්භ වෙමින්...</p>
+        </div>
+      }
+    >
       <QuizContent />
     </Suspense>
   )

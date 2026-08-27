@@ -2,251 +2,250 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrophyIllustration } from '../components/Illustrations'
+import { playSound } from '../utils/sound'
 
-type QuestionResult = {
-  questionId: number
-  question: string
-  options: string[]
-  studentAnswer: number
-  correctAnswer: number
-  isCorrect: boolean
-  explanation: string
-}
-
-type QuizResults = {
-  success?: boolean
+type QuizResult = {
   studentName: string
-  avatar?: string
-  date?: string
-  subject?: string
-  topic?: string
+  avatar: string
+  subject: string
+  topic: string
+  subjectEmoji?: string
   score: number
-  totalQuestions: number
-  percentage?: number
-  results: QuestionResult[]
-  error?: boolean
+  total: number
+  answers: number[]
+  questions: Array<{
+    id: number
+    question: string
+    options: string[]
+    correctAnswer?: number
+    explanation?: string
+  }>
 }
 
 export default function ResultsPage() {
   const router = useRouter()
-  const [results, setResults] = useState<QuizResults | null>(null)
-  const [showConfetti, setShowConfetti] = useState(false)
+  const [result, setResult] = useState<QuizResult | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const stored = sessionStorage.getItem('quizResults')
-    if (stored) {
-      const data: QuizResults = JSON.parse(stored)
-      setResults(data)
-      if (data.score >= 3) {
-        setShowConfetti(true)
-        setTimeout(() => setShowConfetti(false), 6000)
+    try {
+      const stored = sessionStorage.getItem('quizResults')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        setResult(parsed)
+        playSound('win')
       }
+    } catch (e) {
+      console.error('Failed to parse quiz results', e)
+    } finally {
+      setLoading(false)
     }
   }, [])
 
-  if (!results) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-sky-50 to-indigo-50 flex items-center justify-center p-4">
-        <div className="text-center rounded-3xl bg-white p-8 shadow-2xl max-w-md w-full border-4 border-indigo-100">
-          <div className="text-6xl mb-4">🤔</div>
-          <p className="text-2xl font-black text-indigo-950 mb-2">ප්‍රතිඵල හමු නොවීය</p>
-          <p className="text-slate-600 mb-6 font-bold">කරුණාකර මුල් පිටුවට ගොස් ප්‍රශ්නාවලිය ආරම්භ කරන්න.</p>
-          <button
-            onClick={() => router.push('/')}
-            className="w-full rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-lg py-4 shadow-[0_5px_0_#059669] active:translate-y-1 active:shadow-[0_1px_0_#059669] transition-all"
-          >
-            මුල් පිටුවට යන්න 🏠
-          </button>
+      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#F8FAFC]">
+        <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-3xl animate-bounce mb-3 shadow-inner">
+          🏆
         </div>
+        <p className="text-sm font-black text-slate-800">ප්‍රතිඵල ගණනය වෙමින්...</p>
       </div>
     )
   }
 
-  const { score, totalQuestions, results: questionResults, studentName, subject, topic, avatar } = results
-  const percentage = Math.round((score / totalQuestions) * 100)
-  const optionLabels = ['(1)', '(2)', '(3)']
-
-  let emoji = '🏆'
-  let message = ''
-  let subMessage = ''
-
-  if (score >= 5) {
-    emoji = '👑'
-    message = 'විශිෂ්ටයි! සම්පූර්ණ ලකුණු!'
-    subMessage = 'ඔබ අද දවසේ ශිෂ්‍යත්ව සුපිරි තරුවක්! 🌟'
-  } else if (score >= 4) {
-    emoji = '🎉'
-    message = 'හරිම දක්ෂයි! ඉතා හොඳයි!'
-    subMessage = 'ශිෂ්‍යත්ව විභාගයට ඔබේ සූදානම විශිෂ්ටයි! 🚀'
-  } else if (score >= 3) {
-    emoji = '💪'
-    message = 'හොඳ උත්සාහයක්!'
-    subMessage = 'තව ටිකක් පුහුණු වෙමු, හෙට නැවත උත්සාහ කරමු!'
-  } else {
-    emoji = '📖'
-    message = 'තව පුහුණු වෙමු!'
-    subMessage = 'වරදින තරමටයි පාඩම හොඳින් මතක හිටින්නේ. හෙට නැවත එන්න!'
+  if (!result) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <span className="text-4xl mb-2">❓</span>
+        <h3 className="font-extrabold text-slate-800 text-base mb-1">ප්‍රතිඵල හමු නොවීය</h3>
+        <p className="text-xs text-slate-500 mb-4">කරුණාකර ප්‍රශ්නාවලිය නැවත ආරම්භ කරන්න.</p>
+        <button
+          onClick={() => {
+            playSound('click')
+            router.push('/')
+          }}
+          className="btn-3d px-5 py-2.5 rounded-2xl bg-indigo-600 text-white font-black text-xs shadow-tactile-blue"
+        >
+          මුල් පිටුවට 🏠
+        </button>
+      </div>
+    )
   }
 
-  const confettiColors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6bb5', '#845ec2', '#00c9a7']
+  const percent = Math.round((result.score / result.total) * 100)
+  const isHighScorer = percent >= 80
+
+  const handleShare = () => {
+    playSound('click')
+    const shareText = `🎓 සුමිත් සර්ගේ ශිෂ්‍යත්ව ප්‍රශ්නාවලිය\n👤 සිසුවා: ${result.studentName} ${result.avatar}\n📚 විෂය: ${result.subject}\n🏆 ලකුණු: ${result.score}/${result.total} (${percent}%)\n\nඔබත් අදම සහභාගී වන්න! 🚀`
+    const url = `https://wa.me/?text=${encodeURIComponent(shareText)}`
+    window.open(url, '_blank')
+  }
 
   return (
-    <main className="min-h-screen py-8 px-4 max-w-lg mx-auto">
+    <div className="flex-1 flex flex-col h-full bg-[#F8FAFC] relative overflow-hidden">
       
-      {/* Confetti Animation */}
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-          {Array.from({ length: 40 }).map((_, i) => (
+      {/* CONFETTI STREAM IF HIGH SCORER */}
+      {isHighScorer && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden z-50">
+          {[...Array(16)].map((_, i) => (
             <div
               key={i}
-              className="confetti-piece"
+              className="confetti-piece rounded-sm"
               style={{
-                left: `${Math.random() * 100}%`,
-                backgroundColor: confettiColors[i % confettiColors.length],
-                animationDelay: `${Math.random() * 1.5}s`,
-                animationDuration: `${2 + Math.random() * 2}s`,
-                width: `${8 + Math.random() * 8}px`,
-                height: `${8 + Math.random() * 8}px`,
-                borderRadius: Math.random() > 0.5 ? '50%' : '3px',
+                left: `${(i * 6.5) % 100}%`,
+                backgroundColor: ['#FFB703', '#4CC9F0', '#06D6A0', '#F72585', '#4361EE'][i % 5],
+                width: `${8 + (i % 6)}px`,
+                height: `${12 + (i % 8)}px`,
+                animationDelay: `${(i * 0.18)}s`,
+                animationDuration: `${2.6 + (i * 0.25)}s`,
               }}
             />
           ))}
         </div>
       )}
 
-      {/* Main Results Hero Card */}
-      <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-2xl shadow-indigo-100/70 text-center mb-6 border-4 border-indigo-100/80 relative overflow-hidden flex flex-col items-center">
+      {/* HEADER */}
+      <div className="pt-3 px-4 pb-2.5 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between">
+        <button
+          onClick={() => {
+            playSound('click')
+            router.push('/')
+          }}
+          className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold hover:bg-slate-200 transition"
+        >
+          ✕
+        </button>
+        <span className="text-xs font-black text-slate-800 uppercase tracking-wide">ප්‍රතිඵල සටහන</span>
+        <span className="text-base">{result.avatar}</span>
+      </div>
+
+      {/* MAIN SCROLLABLE RESULTS BODY */}
+      <div className="flex-1 overflow-y-auto hide-scroll p-4 pb-24 space-y-4 text-center">
         
-        {/* Big 3D Trophy */}
-        <div className="mb-2">
-          <TrophyIllustration />
-        </div>
+        {/* TROPHY HERO CARD */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-indigo-900 via-indigo-800 to-indigo-950 p-5 text-white shadow-xl border border-white/10">
+          <div className="absolute -top-10 -left-10 w-28 h-28 rounded-full bg-amber-400/20 blur-xl"></div>
+          <div className="absolute -bottom-10 -right-10 w-28 h-28 rounded-full bg-pink-500/20 blur-xl"></div>
 
-        {/* Student Avatar & Name Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-950 font-black text-sm mb-3 border border-indigo-200">
-          <span className="text-xl">{avatar || '👦'}</span>
-          <span>{studentName} ගේ ප්‍රතිඵලය</span>
-        </div>
+          {/* 3D Gold Trophy Vector with Glow */}
+          <div className="relative w-28 h-28 mx-auto mb-1 animate-trophy-glow">
+            <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-2xl">
+              <path d="M40 35 H120 V80 C120 102 102 120 80 120 C58 120 40 102 40 80 V35 Z" fill="url(#trophyGradFinal)"/>
+              <path d="M40 45 H25 C18 45 15 55 20 65 L40 80" stroke="#F59E0B" strokeWidth="8" strokeLinecap="round"/>
+              <path d="M120 45 H135 C142 45 145 55 140 65 L120 80" stroke="#F59E0B" strokeWidth="8" strokeLinecap="round"/>
+              <rect x="68" y="120" width="24" height="20" fill="#D97706"/>
+              <rect x="48" y="140" width="64" height="14" rx="4" fill="#92400E"/>
+              <polygon points="80,55 86,70 102,70 89,80 94,95 80,85 66,95 71,80 58,70 74,70" fill="#FFFFFF" opacity="0.9"/>
+              <defs>
+                <linearGradient id="trophyGradFinal" x1="40" y1="35" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#FCD34D"/>
+                  <stop offset="0.5" stopColor="#F59E0B"/>
+                  <stop offset="1" stopColor="#D97706"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
 
-        {/* Score Ring / Display */}
-        <div className="my-3">
-          <div className="inline-flex flex-col items-center justify-center p-6 rounded-3xl bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-4 border-amber-300 shadow-inner">
-            <span className="text-5xl sm:text-6xl font-black text-amber-950 tracking-tight">
-              {score} <span className="text-3xl text-amber-600 font-bold">/ {totalQuestions}</span>
-            </span>
-            <span className="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full bg-amber-400 text-amber-950 mt-2 shadow-xs">
-              ලකුණු ප්‍රතිශතය: {percentage}%
-            </span>
+          <span className="inline-block bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider mb-1">
+            {percent >= 80 ? '🌟 විශිෂ්ට ජයග්‍රහණයක්!' : percent >= 60 ? '👍 හොඳ උත්සාහයක්!' : '📖 තව පුහුණු වෙමු!'}
+          </span>
+
+          <h2 className="text-3xl font-black text-white tracking-tight">
+            {result.score} / {result.total} ලකුණු!
+          </h2>
+          <p className="text-xs text-indigo-200 mt-1 font-semibold">
+            {result.studentName} පුතා {percent}% ක් සාර්ථකව සම්පූර්ණ කළා!
+          </p>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/10 text-center">
+            <div className="bg-white/10 rounded-2xl p-2 backdrop-blur-xs">
+              <span className="text-[9px] text-indigo-200 block">ප්‍රතිශතය</span>
+              <span className="text-sm font-black text-amber-300">{percent}%</span>
+            </div>
+            <div className="bg-white/10 rounded-2xl p-2 backdrop-blur-xs">
+              <span className="text-[9px] text-indigo-200 block">විෂය</span>
+              <span className="text-xs font-bold text-white truncate block">{result.subject}</span>
+            </div>
+            <div className="bg-white/10 rounded-2xl p-2 backdrop-blur-xs">
+              <span className="text-[9px] text-indigo-200 block">නව XP</span>
+              <span className="text-sm font-black text-emerald-400">+{result.score * 20}</span>
+            </div>
           </div>
         </div>
 
-        {/* Feedback Message */}
-        <h2 className="text-2xl font-black text-indigo-950 mt-2 leading-snug">
-          {message}
-        </h2>
-        <p className="text-sm font-bold text-slate-600 mt-1 leading-relaxed">
-          {subMessage}
-        </p>
+        {/* QUESTION REVIEW ACCORDION */}
+        <div className="text-left space-y-2.5">
+          <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider px-1">
+            📝 ප්‍රශ්න සමාලෝචනය (Review)
+          </h4>
 
-        {/* Share Score on WhatsApp */}
-        <div className="mt-6 pt-5 border-t border-slate-100">
-          <a
-            href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-              `🏆 *මම සුමිත් සර්ගේ ශිෂ්‍යත්ව ප්‍රශ්නාවලියට සහභාගී වුණා!*\n\n👦 *නම:* ${studentName}\n📊 *මගේ ලකුණු:* ${score}/${totalQuestions} (${percentage}%)\n📖 *විෂය:* ${subject || 'ශිෂ්‍යත්ව පුහුණුව'}\n\n👉 *ඔබත් දැන්ම ප්‍රශ්නාවලියට සහභාගී වී ලකුණු බලන්න:*\n${typeof window !== 'undefined' ? window.location.origin : ''}\n\n— *සුමිත් සර්ගේ පන්තිය*`
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full min-h-[50px] rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base shadow-md active:scale-95 transition-all"
-          >
-            <span className="text-xl">📲</span>
-            <span>ලකුණු WhatsApp එකට Share කරන්න</span>
-          </a>
-        </div>
+          {result.questions.map((q, idx) => {
+            const studentAns = result.answers[idx]
+            const correctAns = q.correctAnswer !== undefined ? q.correctAnswer : 1
+            const isQCorrect = studentAns === correctAns
 
-      </div>
+            return (
+              <div
+                key={idx}
+                className={`glow-border-card p-3.5 border-2 ${
+                  isQCorrect ? 'border-emerald-200/80 bg-emerald-50/20' : 'border-rose-200/80 bg-rose-50/20'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <span className="text-xs font-black text-slate-800 flex-1">
+                    {idx + 1}. {q.question}
+                  </span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-md flex-shrink-0 ${
+                    isQCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                  }`}>
+                    {isQCorrect ? '✓ හරි' : '✕ වැරදියි'}
+                  </span>
+                </div>
 
-      {/* Review All Questions */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4 px-2">
-          <h3 className="text-lg font-black text-indigo-950 flex items-center gap-2">
-            <span>📋</span> ප්‍රශ්න සහ නිවැරදි විවරණ
-          </h3>
-          <span className="text-xs font-black px-3 py-1 rounded-full bg-white text-indigo-900 shadow-sm border border-indigo-100">
-            ප්‍රශ්න {totalQuestions} යි
-          </span>
-        </div>
-
-        <div className="space-y-4">
-          {questionResults && questionResults.map((r, idx) => (
-            <div
-              key={idx}
-              className={`rounded-3xl p-5 border-2 shadow-sm bg-white ${
-                r.isCorrect ? 'border-emerald-300' : 'border-rose-300'
-              }`}
-            >
-              {/* Question Header */}
-              <div className="flex items-start gap-3 mb-3">
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base font-black ${
-                  r.isCorrect ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                }`}>
-                  {r.isCorrect ? '✓' : '✗'}
-                </span>
-                <div>
-                  <p className="text-[11px] font-black text-slate-400 uppercase">ප්‍රශ්න අංක 0{idx + 1}</p>
-                  <p className="font-extrabold text-indigo-950 text-base leading-snug mt-0.5">{r.question}</p>
+                <div className="text-[11px] text-slate-600 space-y-0.5">
+                  <div>
+                    <span className="font-semibold text-slate-400">ඔබේ පිළිතුර: </span>
+                    <span className={`font-bold ${isQCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
+                      {studentAns !== undefined && q.options[studentAns] ? q.options[studentAns] : 'නැත'}
+                    </span>
+                  </div>
+                  {!isQCorrect && (
+                    <div>
+                      <span className="font-semibold text-slate-400">නිවැරදි පිළිතුර: </span>
+                      <span className="font-bold text-emerald-700">{q.options[correctAns]}</span>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Options Breakdown */}
-              <div className="space-y-1.5 ml-11 mb-3">
-                {r.options.map((opt, optIdx) => {
-                  let optClass = 'bg-slate-50 text-slate-700 border border-slate-200'
-                  let indicator = optionLabels[optIdx]
-
-                  if (optIdx === r.correctAnswer) {
-                    optClass = 'bg-emerald-50 text-emerald-950 font-black border-2 border-emerald-400 shadow-xs'
-                    indicator = '✅ ' + optionLabels[optIdx]
-                  } else if (optIdx === r.studentAnswer && !r.isCorrect) {
-                    optClass = 'bg-rose-50 text-rose-950 font-bold border-2 border-rose-300 line-through opacity-80'
-                    indicator = '❌ ' + optionLabels[optIdx]
-                  }
-
-                  return (
-                    <div key={optIdx} className={`p-2.5 rounded-xl text-sm flex items-center gap-2 ${optClass}`}>
-                      <span className="font-bold">{indicator}</span>
-                      <span>{opt}</span>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Explanation Box */}
-              <div className="ml-11 rounded-2xl bg-amber-50 p-3.5 border border-amber-200 text-xs font-bold text-amber-950 leading-relaxed">
-                <p className="font-black text-amber-900 mb-0.5 flex items-center gap-1">
-                  <span>💡</span> නිවැරදි විවරණය:
-                </p>
-                <p>{r.explanation}</p>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
+
+        {/* ACTION BUTTONS */}
+        <div className="space-y-2.5 pt-1">
+          <button
+            onClick={handleShare}
+            className="btn-3d w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs shadow-tactile-green flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span className="text-base">💬</span>
+            <span>WhatsApp හරහා ලකුණු යවන්න</span>
+          </button>
+
+          <button
+            onClick={() => {
+              playSound('click')
+              router.push('/')
+            }}
+            className="btn-3d w-full py-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 font-extrabold text-xs border-2 border-slate-200 shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>🏠 මුල් පිටුවට යන්න</span>
+          </button>
+        </div>
+
       </div>
 
-      {/* Back to Home 3D Button */}
-      <button
-        onClick={() => router.push('/')}
-        className="w-full rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xl px-6 py-4 shadow-[0_6px_0_#3730a3] active:translate-y-1 active:shadow-[0_2px_0_#3730a3] transition-all flex items-center justify-center gap-2 mb-6 cursor-pointer"
-      >
-        <span>නැවත මුල් පිටුවට යන්න</span>
-        <span>🏠</span>
-      </button>
-
-      {/* Footer */}
-      <footer className="text-center text-xs font-bold text-slate-400 pb-4">
-        👨‍🏫 සුමිත් සර්ගේ 5 ශ්‍රේණිය ශිෂ්‍යත්ව පුහුණු මධ්‍යස්ථානය
-      </footer>
-
-    </main>
+    </div>
   )
 }

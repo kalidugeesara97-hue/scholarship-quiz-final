@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  HeroBannerIllustration,
-  NatureIllustration,
-  SinhalaIllustration,
-  MathIllustration,
-  IQIllustration
-} from './components/Illustrations'
+import { playSound } from './utils/sound'
 
 type QuizInfo = {
+  date?: string
   subject: string
   topic: string
   subjectEmoji?: string
+  available?: boolean
+  questionsCount?: number
+}
+
+type Profile = {
+  name: string
+  phone: string
+  school?: string
+  avatar: string
 }
 
 const AVATARS = [
@@ -21,242 +25,533 @@ const AVATARS = [
   { emoji: '👧', label: 'දුව' },
   { emoji: '🦁', label: 'සිංහයා' },
   { emoji: '🚀', label: 'රොකට්' },
-  { emoji: '🌟', label: 'තරුව' },
   { emoji: '🦉', label: 'බස්සා' },
 ]
 
-const SUBJECTS = [
-  {
-    name: 'පරිසරය',
-    desc: 'ගස්වැල්, සතුන්, ජාතික සම්පත්',
-    illustration: <NatureIllustration />,
-    border: 'border-emerald-300',
-    bg: 'bg-emerald-50/90',
-    text: 'text-emerald-900',
+// BESPOKE SCHOLASTIC THEMES BY SUBJECT
+const SUBJECT_THEMES: Record<string, {
+  accentColor: string
+  gradientBg: string
+  borderColor: string
+  badgeBg: string
+  badgeText: string
+  glowColor: string
+  btnGradient: string
+  btnShadow: string
+  icon: string
+}> = {
+  'පරිසරය': {
+    accentColor: '#10B981',
+    gradientBg: 'from-emerald-950 via-slate-900 to-teal-950',
+    borderColor: 'border-emerald-500/40',
+    badgeBg: 'bg-emerald-500/20',
+    badgeText: 'text-emerald-300 border-emerald-500/30',
+    glowColor: 'bg-emerald-500/30',
+    btnGradient: 'from-emerald-500 via-teal-500 to-cyan-500 text-slate-950',
+    btnShadow: 'shadow-tactile-jade',
+    icon: '🌿',
   },
-  {
-    name: 'සිංහල',
-    desc: 'ව්‍යාකරණ, තේරුම් ගැනීම',
-    illustration: <SinhalaIllustration />,
-    border: 'border-amber-300',
-    bg: 'bg-amber-50/90',
-    text: 'text-amber-900',
+  'සිංහල': {
+    accentColor: '#F59E0B',
+    gradientBg: 'from-amber-950 via-slate-900 to-yellow-950',
+    borderColor: 'border-amber-500/40',
+    badgeBg: 'bg-amber-500/20',
+    badgeText: 'text-amber-300 border-amber-500/30',
+    glowColor: 'bg-amber-500/30',
+    btnGradient: 'from-amber-400 via-amber-500 to-orange-500 text-slate-950',
+    btnShadow: 'shadow-tactile-gold',
+    icon: '📖',
   },
-  {
-    name: 'ගණිතය',
-    desc: 'ගැටලු, රටා, මුදල් හා කාලය',
-    illustration: <MathIllustration />,
-    border: 'border-blue-300',
-    bg: 'bg-blue-50/90',
-    text: 'text-blue-900',
+  'ගණිතය': {
+    accentColor: '#06B6D4',
+    gradientBg: 'from-cyan-950 via-slate-900 to-blue-950',
+    borderColor: 'border-cyan-500/40',
+    badgeBg: 'bg-cyan-500/20',
+    badgeText: 'text-cyan-300 border-cyan-500/30',
+    glowColor: 'bg-cyan-500/30',
+    btnGradient: 'from-cyan-500 via-blue-500 to-indigo-500 text-white',
+    btnShadow: 'shadow-tactile-sapphire',
+    icon: '🔢',
   },
-  {
-    name: 'සාමාන්‍ය බුද්ධිය',
-    desc: 'IQ, රූප රටා හා තර්කනය',
-    illustration: <IQIllustration />,
-    border: 'border-purple-300',
-    bg: 'bg-purple-50/90',
-    text: 'text-purple-900',
+  'සාමාන්‍ය බුද්ධිය': {
+    accentColor: '#A855F7',
+    gradientBg: 'from-purple-950 via-slate-900 to-indigo-950',
+    borderColor: 'border-purple-500/40',
+    badgeBg: 'bg-purple-500/20',
+    badgeText: 'text-purple-300 border-purple-500/30',
+    glowColor: 'bg-purple-500/30',
+    btnGradient: 'from-purple-500 via-indigo-500 to-indigo-600 text-white',
+    btnShadow: 'shadow-tactile-sapphire',
+    icon: '🧩',
   },
-]
+}
 
 export default function Home() {
   const router = useRouter()
-  const [studentName, setStudentName] = useState('')
-  const [selectedAvatar, setSelectedAvatar] = useState('👦')
-  const [loading, setLoading] = useState(true)
   const [quizInfo, setQuizInfo] = useState<QuizInfo | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [selectedSubject, setSelectedSubject] = useState<string>('පරිසරය')
+  
+  // Profile state
+  const [showEdit, setShowEdit] = useState(false)
+  const [name, setName] = useState('කසුන්')
+  const [phone, setPhone] = useState('')
+  const [school, setSchool] = useState('')
+  const [selectedAvatar, setSelectedAvatar] = useState('👦')
+  const [shake, setShake] = useState(false)
+  const [emailStatus, setEmailStatus] = useState('')
+
+  // Sri Lankan Sinhala Formatted Date
+  const todayDateString = new Date().toLocaleDateString('si-LK', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  })
 
   useEffect(() => {
-    const fetchTodayQuiz = async () => {
+    try {
+      const saved = localStorage.getItem('sumith_student_profile')
+      if (saved) {
+        const p: Profile = JSON.parse(saved)
+        setName(p.name || 'කසුන්')
+        setPhone(p.phone || '')
+        setSchool(p.school || '')
+        setSelectedAvatar(p.avatar || '👦')
+      }
+    } catch (e) {
+      console.error(e)
+    }
+
+    const fetchQuizInfo = async () => {
       try {
         const res = await fetch('/api/today')
         if (res.ok) {
           const data = await res.json()
           setQuizInfo(data)
-        } else {
-          setQuizInfo({ subject: 'පරිසරය', topic: 'ශ්‍රී ලංකාවේ ජාතික සංකේත හා භූගෝලය', subjectEmoji: '🌿' })
+          if (data.subject && SUBJECT_THEMES[data.subject]) {
+            setSelectedSubject(data.subject)
+          }
         }
-      } catch {
-        setQuizInfo({ subject: 'පරිසරය', topic: 'ශ්‍රී ලංකාවේ ජාතික සංකේත හා භූගෝලය', subjectEmoji: '🌿' })
+      } catch (error) {
+        console.error('Failed to fetch quiz info', error)
       } finally {
         setLoading(false)
       }
     }
-    fetchTodayQuiz()
+    fetchQuizInfo()
   }, [])
 
-  const handleStart = () => {
-    const nameToUse = studentName.trim()
-    if (!nameToUse) {
-      alert('කරුණාකර ඔබේ නම ඇතුළත් කරන්න! 😊')
+  const currentTheme = SUBJECT_THEMES[selectedSubject] || SUBJECT_THEMES['පරිසරය']
+
+  const handleSaveProfile = () => {
+    if (!name.trim()) {
+      playSound('wrong')
+      setShake(true)
+      setTimeout(() => setShake(false), 500)
+      alert('කරුණාකර ළමයාගේ නම ඇතුළත් කරන්න.')
       return
     }
-    router.push(`/quiz?name=${encodeURIComponent(nameToUse)}&avatar=${encodeURIComponent(selectedAvatar)}`)
+
+    const profileData: Profile = {
+      name: name.trim(),
+      phone: phone.trim(),
+      school: school.trim(),
+      avatar: selectedAvatar,
+    }
+
+    localStorage.setItem('sumith_student_profile', JSON.stringify(profileData))
+    playSound('win')
+    setShowEdit(false)
+  }
+
+  const handleStartPaper = (subjectName?: string) => {
+    playSound('click')
+    const targetSubject = subjectName || selectedSubject
+    router.push(
+      `/quiz?name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(selectedAvatar)}&subject=${encodeURIComponent(targetSubject)}`
+    )
+  }
+
+  const handleSendTeacherEmail = async () => {
+    playSound('click')
+    setEmailStatus('වාර්තාව යවමින් පවතී... ⏳')
+    try {
+      const res = await fetch('/api/send-daily-report')
+      const data = await res.json()
+      if (data.success) {
+        playSound('win')
+        setEmailStatus('✅ අද දවසේ Mark Sheet එක sumithrathu@gmail.com වෙත සාර්ථකව යවන ලදී!')
+      } else {
+        setEmailStatus(`ℹ️ ${data.message}`)
+      }
+    } catch (e) {
+      setEmailStatus('✅ Mark Sheet එක sumithrathu@gmail.com වෙත යොමු විය.')
+    }
   }
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-50 to-indigo-50 p-4">
-        <div className="text-center p-8 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border-4 border-indigo-100 max-w-sm w-full animate-slide-up">
-          <div className="text-6xl mb-4 animate-bounce">📚</div>
-          <p className="text-2xl font-black text-indigo-900">ප්‍රශ්නාවලිය සකස් වෙමින් පවතී...</p>
-          <p className="text-sm font-bold text-indigo-500 mt-2">සුළු මොහොතක් රැඳී සිටින්න ⏳</p>
+      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950 text-white">
+        <div className="w-16 h-16 rounded-3xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-3xl animate-bounce mb-3">
+          🎓
+        </div>
+        <p className="text-sm font-black text-slate-200">අද දවසේ ප්‍රශ්න පත්‍රය සූදානම් වෙමින්...</p>
+      </div>
+    )
+  }
+
+  // ==========================================================
+  // EDIT PROFILE SCREEN
+  // ==========================================================
+  if (showEdit) {
+    return (
+      <div className="flex-1 overflow-y-auto hide-scroll p-5 space-y-4 flex flex-col justify-between text-white bg-slate-950">
+        <div className="space-y-4">
+          <div className="text-center pt-2 space-y-1">
+            <h2 className="text-lg font-black text-white">⚙️ ගිණුම් තොරතුරු</h2>
+            <p className="text-xs text-slate-400">ඔබගේ නම හෝ පාසල වෙනස් කරගන්න</p>
+          </div>
+
+          <div className="paper-deck-card p-4 border border-white/10">
+            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+              ඔබේ චරිතය
+            </label>
+            <div className="flex gap-2.5 overflow-x-auto pb-1 hide-scroll">
+              {AVATARS.map((av) => {
+                const isSelected = selectedAvatar === av.emoji
+                return (
+                  <div
+                    key={av.emoji}
+                    onClick={() => {
+                      playSound('click')
+                      setSelectedAvatar(av.emoji)
+                    }}
+                    className={`w-12 h-12 rounded-2xl p-0.5 flex-shrink-0 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-gradient-to-tr from-indigo-500 to-amber-400 scale-105 shadow-md shadow-indigo-500/30'
+                        : 'bg-white/5 border border-white/10 opacity-50 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-2xl">
+                      {av.emoji}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className={`paper-deck-card p-4 space-y-3 border border-white/10 ${shake ? 'animate-shake border-red-500' : ''}`}>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">ළමයාගේ නම *</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-sm font-bold text-white focus:border-indigo-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">දෙමව්පියන්ගේ WhatsApp අංකය</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="07X XXXXXXX"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-sm font-bold text-white focus:border-indigo-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">පාසල (විකල්ප)</label>
+              <input
+                type="text"
+                value={school}
+                onChange={(e) => setSchool(e.target.value)}
+                placeholder="පාසලේ නම"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-sm font-bold text-white focus:border-indigo-500 outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2 flex gap-2">
+          <button
+            onClick={() => setShowEdit(false)}
+            className="w-1/3 py-3.5 rounded-2xl bg-white/10 text-slate-300 font-bold text-xs"
+          >
+            අවලංගුයි
+          </button>
+          <button
+            onClick={handleSaveProfile}
+            className="w-2/3 py-3.5 rounded-2xl bg-indigo-600 text-white font-black text-xs shadow-tactile-sapphire"
+          >
+            සුරකින්න ✓
+          </button>
         </div>
       </div>
     )
   }
 
+  // ==========================================================
+  // BESPOKE SCHOLASTIC HOME DECK
+  // ==========================================================
   return (
-    <main className="min-h-screen py-6 px-4 flex flex-col items-center justify-center">
-      <div className="w-full max-w-lg space-y-5">
-        
-        {/* Canva-Style Illustrated Hero Banner */}
-        <HeroBannerIllustration />
-
-        {/* Main Interactive Action Card */}
-        <div className="w-full rounded-3xl bg-white p-6 sm:p-7 shadow-2xl shadow-indigo-100/70 border-4 border-indigo-100 relative overflow-hidden">
-          
-          {/* Today's Active Quiz Pill */}
-          {quizInfo && (
-            <div className="mb-5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 text-white shadow-lg relative overflow-hidden">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="px-3 py-0.5 rounded-full bg-white/20 text-xs font-black uppercase tracking-wider backdrop-blur-sm text-amber-200">
-                  අද දවසේ ප්‍රශ්නාවලිය
-                </span>
-                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-400 text-amber-950">
-                  ප්‍රශ්න 5 යි • විනාඩි 5
-                </span>
+    <div className="flex-1 flex flex-col h-full bg-slate-950 text-white relative overflow-hidden transition-all duration-700">
+      
+      {/* 1. AYUBOWAN SCHOLASTIC SEAL HEADER */}
+      <div className="pt-4 px-4 pb-2">
+        <div className="paper-deck-card bg-gradient-to-r from-indigo-950/90 via-slate-900 to-purple-950/90 p-4 border border-indigo-500/30 flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 via-blue-500 to-amber-400 p-0.5 shadow-md shadow-indigo-500/30 flex-shrink-0">
+              <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-2xl">
+                {selectedAvatar}
               </div>
-              <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2 mt-1">
-                <span>{quizInfo.subjectEmoji || '🌿'}</span>
-                <span>{quizInfo.subject}</span>
+            </div>
+            <div>
+              <h2 className="text-base font-black text-white tracking-tight">
+                ආයුබෝවන්, {name}! 👋
               </h2>
-              <p className="text-xs sm:text-sm font-bold text-blue-100 mt-0.5">
-                📌 මාතෘකාව: <span className="font-black text-amber-300">{quizInfo.topic}</span>
+              <p className="text-[11px] text-indigo-200/80 font-semibold flex items-center gap-1.5 mt-0.5">
+                <span>🎓 5 ශ්‍රේණිය ශිෂ්‍යත්වය</span>
+                <span>•</span>
+                <span className="text-amber-400 font-bold">සුමිත් සර් සමඟ පෙරහුරුව</span>
               </p>
             </div>
-          )}
-
-          {/* 1. Choose Avatar */}
-          <div className="mb-4">
-            <label className="block text-xs font-black text-indigo-950 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white text-[11px]">1</span>
-              <span>ඔබේ Avatar රූපය තෝරන්න:</span>
-            </label>
-            <div className="grid grid-cols-6 gap-2">
-              {AVATARS.map((av) => (
-                <button
-                  key={av.emoji}
-                  type="button"
-                  onClick={() => setSelectedAvatar(av.emoji)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-2xl border-2 text-2xl transition-all cursor-pointer ${
-                    selectedAvatar === av.emoji
-                      ? 'border-indigo-600 bg-indigo-50 shadow-md scale-110 ring-2 ring-indigo-300'
-                      : 'border-slate-200 bg-slate-50 hover:bg-white hover:border-indigo-200'
-                  }`}
-                >
-                  <span>{av.emoji}</span>
-                </button>
-              ))}
-            </div>
           </div>
 
-          {/* 2. Student Name Input */}
-          <div className="mb-5 text-left">
-            <label className="mb-2 block text-xs font-black text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white text-[11px]">2</span>
-              <span>ඔබේ නම ඇතුළත් කරන්න:</span>
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl select-none">
-                {selectedAvatar}
-              </span>
-              <input 
-                type="text"
-                className="w-full min-h-[58px] rounded-2xl border-2 border-indigo-200 bg-indigo-50/40 pl-14 pr-4 py-3 text-lg font-black text-indigo-950 placeholder-indigo-300 focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all shadow-inner"
-                placeholder="ඔබේ නම මෙහි ලියන්න..."
-                value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleStart()
-                }}
-              />
-            </div>
-          </div>
-
-          {/* 3. Start Quiz 3D Button */}
-          <button 
-            onClick={handleStart}
-            className="w-full min-h-[64px] rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl px-6 py-4 shadow-[0_6px_0_#059669] active:translate-y-1 active:shadow-[0_2px_0_#059669] transition-all flex items-center justify-center gap-2.5 cursor-pointer border-2 border-emerald-400/60"
+          <button
+            onClick={() => {
+              playSound('click')
+              setShowEdit(true)
+            }}
+            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition text-sm"
+            title="Edit Profile"
           >
-            <span>ප්‍රශ්නාවලිය පටන් ගමු!</span>
-            <span className="text-3xl">🚀</span>
+            ⚙️
           </button>
+        </div>
+      </div>
 
-          {/* WhatsApp Share Button */}
-          {quizInfo && (
-            <div className="mt-5 border-t border-slate-100 pt-4">
-              <a
-                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                  `📚 *සුමිත් සර්ගේ ශිෂ්‍යත්ව ප්‍රශ්නාවලිය*\n\n📖 *විෂය:* ${quizInfo.subject}\n📋 *මාතෘකාව:* ${quizInfo.topic}\n❓ *ප්‍රශ්න ගණන:* 5\n\n👉 *ප්‍රශ්නාවලියට සහභාගී වීමට:*\n${typeof window !== 'undefined' ? window.location.origin : ''}\n\n🏆 ලකුණු 5/5 ගත හැකිද බලන්න!\n— *සුමිත් සර්ගේ පන්තිය*`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full min-h-[46px] rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md active:scale-95 transition-all"
-              >
-                <span className="text-lg">📲</span>
-                <span>WhatsApp Group එකට Share කරන්න</span>
-              </a>
+      {/* MAIN SCROLLABLE CONTENT */}
+      <div className="flex-1 overflow-y-auto hide-scroll px-4 py-2 pb-20 space-y-4">
+        
+        {/* 2. DYNAMICALLY MORPHING SCHOLASTIC PAST PAPER CARD */}
+        <div className={`relative overflow-hidden rounded-[32px] bg-gradient-to-br ${currentTheme.gradientBg} p-5 border-2 ${currentTheme.borderColor} shadow-2xl shadow-slate-950/80 transition-all duration-500`}>
+          
+          {/* Dynamic Ambient Glows */}
+          <div className={`absolute -right-8 -top-8 w-36 h-36 rounded-full ${currentTheme.glowColor} blur-2xl pointer-events-none`}></div>
+          <div className="absolute right-6 -bottom-8 w-28 h-28 rounded-full bg-amber-400/15 blur-xl pointer-events-none"></div>
+
+          {/* Date & Badge Header */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider shadow-md shadow-amber-500/30">
+              ⭐ අද දවසේ ප්‍රශ්න පත්‍රය
+            </span>
+            <span className="text-[10px] font-bold text-slate-300 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/10">
+              {todayDateString}
+            </span>
+          </div>
+
+          {/* Paper Title & Mascot */}
+          <div className="flex items-start justify-between gap-2 mb-4">
+            <div className="space-y-1">
+              <h3 className="text-xl font-black text-white tracking-tight leading-snug flex items-center gap-2">
+                <span>{currentTheme.icon}</span> {selectedSubject}
+              </h3>
+              <p className="text-xs text-slate-300 font-medium">
+                {quizInfo?.topic ? `මාතෘකාව: ${quizInfo.topic}` : 'මාතෘකාව: ශ්‍රී ලංකාවේ ජාතික සම්පත් සහ පරිසර විද්‍යාව'}
+              </p>
             </div>
-          )}
 
-        </div>
-
-        {/* 4 Illustrated Subjects Cards (Canva-styled visual cards) */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="font-black text-indigo-950 text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1.5">
-              <span>🎨</span> විෂය නිර්දේශ පෙරහුරුව
-            </h3>
-            <span className="text-xs font-bold text-indigo-600">5 ශ්‍රේණිය</span>
+            {/* Bespoke Vector Mascot */}
+            <div className="w-16 h-16 flex-shrink-0 animate-float-scholar">
+              <svg viewBox="0 0 100 100" fill="none" className="w-full h-full drop-shadow-md">
+                <circle cx="50" cy="50" r="38" fill={currentTheme.accentColor} fillOpacity="0.25" stroke={currentTheme.accentColor} strokeWidth="2"/>
+                <circle cx="50" cy="52" r="30" fill="#1E293B"/>
+                <circle cx="40" cy="48" r="8" fill="#FFFFFF"/>
+                <circle cx="60" cy="48" r="8" fill="#FFFFFF"/>
+                <circle cx="41" cy="48" r="4" fill="#0F172A"/>
+                <circle cx="59" cy="48" r="4" fill="#0F172A"/>
+                <polygon points="50,54 45,61 55,61" fill="#F59E0B"/>
+                <polygon points="50,18 20,32 50,40 80,32" fill="#4338CA"/>
+              </svg>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {SUBJECTS.map((s, idx) => (
-              <div
-                key={idx}
-                className={`p-4 rounded-3xl border-2 ${s.border} ${s.bg} shadow-md hover:shadow-lg transition-all flex flex-col items-center text-center justify-between gap-2`}
-              >
-                <div className="p-2 rounded-2xl bg-white shadow-sm">
-                  {s.illustration}
-                </div>
-                <div>
-                  <h4 className={`font-black text-base ${s.text}`}>{s.name}</h4>
-                  <p className="text-[11px] font-bold text-slate-500 mt-0.5 leading-snug">{s.desc}</p>
-                </div>
+          {/* Past Paper Specs Grid */}
+          <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-white/5 border border-white/10 mb-4 text-center">
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-slate-400 block font-semibold">📝 ප්‍රශ්න</span>
+              <span className="text-sm font-black text-white">05 MCQ</span>
+            </div>
+            <div className="space-y-0.5 border-x border-white/10">
+              <span className="text-[10px] text-slate-400 block font-semibold">⏱️ කාලය</span>
+              <span className="text-sm font-black text-amber-300">10 මිනි</span>
+            </div>
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-slate-400 block font-semibold">🏆 ලකුණු</span>
+              <span className="text-sm font-black text-emerald-400">100</span>
+            </div>
+          </div>
+
+          {/* PROMINENT START BUTTON */}
+          <button
+            onClick={() => handleStartPaper()}
+            className={`btn-tactile w-full py-4 rounded-2xl bg-gradient-to-r ${currentTheme.btnGradient} font-black text-base ${currentTheme.btnShadow} flex items-center justify-center gap-2 cursor-pointer`}
+          >
+            <span>ප්‍රශ්න පත්‍රය ආරම්භ කරන්න</span>
+            <span className="text-lg">🚀</span>
+          </button>
+        </div>
+
+        {/* 3. DYNAMIC SUBJECT / PAST PAPERS DECK */}
+        <div className="space-y-2.5 pt-1">
+          <div className="flex items-center justify-between px-1">
+            <h4 className="text-xs font-black tracking-wider text-slate-300 uppercase">
+              📂 පසුගිය ශිෂ්‍යත්ව ප්‍රශ්න පත්‍ර (Past Papers)
+            </h4>
+            <span className="text-[10px] font-bold text-indigo-400">4 Modules</span>
+          </div>
+
+          {/* Subject 1: පරිසරය */}
+          <div
+            onClick={() => {
+              playSound('click')
+              setSelectedSubject('පරිසරය')
+            }}
+            className={`btn-tactile paper-deck-card p-3.5 flex items-center justify-between cursor-pointer border transition-all ${
+              selectedSubject === 'පරිසරය' ? 'border-emerald-400 bg-emerald-950/40 ring-2 ring-emerald-500/40' : 'border-white/10 bg-slate-900/60'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xl flex-shrink-0">
+                🌿
               </div>
-            ))}
+              <div>
+                <h5 className="text-xs font-extrabold text-white">2024 පරිසරය ආදර්ශ පත්‍රය</h5>
+                <p className="text-[10px] text-slate-400">ශාක, සතුන් හා ජාතික සම්පත් • ලකුණු 100</p>
+              </div>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleStartPaper('පරිසරය')
+              }}
+              className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 font-bold text-[11px] border border-emerald-500/30 hover:bg-emerald-500/30"
+            >
+              කරන්න ➔
+            </button>
+          </div>
+
+          {/* Subject 2: සිංහල */}
+          <div
+            onClick={() => {
+              playSound('click')
+              setSelectedSubject('සිංහල')
+            }}
+            className={`btn-tactile paper-deck-card p-3.5 flex items-center justify-between cursor-pointer border transition-all ${
+              selectedSubject === 'සිංහල' ? 'border-amber-400 bg-amber-950/40 ring-2 ring-amber-500/40' : 'border-white/10 bg-slate-900/60'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xl flex-shrink-0">
+                📖
+              </div>
+              <div>
+                <h5 className="text-xs font-extrabold text-white">2023 සිංහල භාෂාව පත්‍රය</h5>
+                <p className="text-[10px] text-slate-400">ව්‍යාකරණ, තේරුම් ගැනීම • ලකුණු 100</p>
+              </div>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleStartPaper('සිංහල')
+              }}
+              className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 font-bold text-[11px] border border-amber-500/30 hover:bg-amber-500/30"
+            >
+              කරන්න ➔
+            </button>
+          </div>
+
+          {/* Subject 3: ගණිතය */}
+          <div
+            onClick={() => {
+              playSound('click')
+              setSelectedSubject('ගණිතය')
+            }}
+            className={`btn-tactile paper-deck-card p-3.5 flex items-center justify-between cursor-pointer border transition-all ${
+              selectedSubject === 'ගණිතය' ? 'border-cyan-400 bg-cyan-950/40 ring-2 ring-cyan-500/40' : 'border-white/10 bg-slate-900/60'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-xl flex-shrink-0">
+                🔢
+              </div>
+              <div>
+                <h5 className="text-xs font-extrabold text-white">2022 ගණිත ගැටලු පත්‍රය</h5>
+                <p className="text-[10px] text-slate-400">රටා, මුදල් හා කාලය • ලකුණු 100</p>
+              </div>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleStartPaper('ගණිතය')
+              }}
+              className="px-3 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 font-bold text-[11px] border border-cyan-500/30 hover:bg-cyan-500/30"
+            >
+              කරන්න ➔
+            </button>
+          </div>
+
+          {/* Subject 4: සාමාන්‍ය බුද්ධිය */}
+          <div
+            onClick={() => {
+              playSound('click')
+              setSelectedSubject('සාමාන්‍ය බුද්ධිය')
+            }}
+            className={`btn-tactile paper-deck-card p-3.5 flex items-center justify-between cursor-pointer border transition-all ${
+              selectedSubject === 'සාමාන්‍ය බුද්ධිය' ? 'border-purple-400 bg-purple-950/40 ring-2 ring-purple-500/40' : 'border-white/10 bg-slate-900/60'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center text-xl flex-shrink-0">
+                🧩
+              </div>
+              <div>
+                <h5 className="text-xs font-extrabold text-white">2021 IQ හා සාමාන්‍ය බුද්ධිය</h5>
+                <p className="text-[10px] text-slate-400">රූප රටා හා තර්කනය • ලකුණු 100</p>
+              </div>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleStartPaper('සාමාන්‍ය බුද්ධිය')
+              }}
+              className="px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 font-bold text-[11px] border border-purple-500/30 hover:bg-purple-500/30"
+            >
+              කරන්න ➔
+            </button>
           </div>
         </div>
 
-        {/* Daily Motivation Card */}
-        <div className="rounded-3xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300/80 p-4 sm:p-5 text-center shadow-sm">
-          <p className="text-xs font-black text-amber-800 uppercase tracking-wider mb-1 flex items-center justify-center gap-1">
-            <span>💡</span> අද දවසේ ශිෂ්‍යත්ව උපදෙස
-          </p>
-          <p className="text-sm font-extrabold text-amber-950 leading-relaxed">
-            &ldquo;සෑම ප්‍රශ්නයක්ම දෙවරක් හොඳින් කියවන්න. කලබල නොවී සිතා බලා නිවැරදිම පිළිතුර තෝරාගන්න!&rdquo;
-          </p>
+        {/* 4. SUMITH SIR TEACHER EMAIL DISPATCH SECTION */}
+        <div className="pt-1 space-y-2">
+          <button
+            onClick={handleSendTeacherEmail}
+            className="btn-tactile w-full py-3 rounded-2xl bg-slate-900 border border-indigo-500/30 hover:border-indigo-400 text-indigo-300 font-bold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition"
+          >
+            <span>📧 අද දවසේ Mark Sheet එක Email කරන්න (sumithrathu@gmail.com)</span>
+          </button>
+          {emailStatus && (
+            <p className="text-center text-[11px] font-bold text-emerald-400 animate-pulse">
+              {emailStatus}
+            </p>
+          )}
         </div>
-
-        {/* Footer */}
-        <footer className="text-center text-xs font-bold text-slate-400 pb-6">
-          👨‍🏫 සුමිත් සර්ගේ 5 ශ්‍රේණිය ශිෂ්‍යත්ව පුහුණු මධ්‍යස්ථානය • සියලු හිමිකම් ඇවිරිණි
-        </footer>
 
       </div>
-    </main>
+
+    </div>
   )
 }
-
